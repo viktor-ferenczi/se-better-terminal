@@ -84,6 +84,9 @@
     <Reference Include="Sandbox.Game, Version=0.1.1.0, Culture=neutral, PublicKeyToken=null">
       <HintPath>..\Bin64\Sandbox.Game.dll</HintPath>
     </Reference>
+    <Reference Include="Sandbox.Game">
+      <HintPath>obj\Debug\PublicizedAssemblies\Sandbox.Game.6C940DA62F3E61C1D591990669141944\Sandbox.Game.dll</HintPath>
+    </Reference>
     <Reference Include="Sandbox.Game.XmlSerializers, Version=0.1.1.0, Culture=neutral, PublicKeyToken=null">
       <HintPath>..\Bin64\Sandbox.Game.XmlSerializers.dll</HintPath>
     </Reference>
@@ -493,7 +496,6 @@
     <Compile Include="Config.cs" />
     <Compile Include="Extensions\Extensions.cs" />
     <Compile Include="Logic\ControlPanelLogic.cs" />
-    <Compile Include="Logic\MyTerminalComparer.cs" />
     <Compile Include="Patches\MyGuiScreenTerminalPatch.cs" />
     <Compile Include="Patches\MyTerminalControlPanelPatch.cs" />
     <Compile Include="Plugin.cs" />
@@ -522,10 +524,25 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Krafs.Publicizer" Version="2.3.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="Lib.Harmony" Version="2.3.3" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>call "$(ProjectDir)\deploy.bat" "$(TargetPath)" "$(SolutionName)"</PostBuildEvent>
   </PropertyGroup>
+  <PropertyGroup>
+    <PublicizerLogFilePath>C:\\Temp\\Krafs.Publicizer.log</PublicizerLogFilePath>
+    <PublicizerClearCacheOnClean>true</PublicizerClearCacheOnClean>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- <Publicize Include="MyAssemblyFileName" MemberPattern="^MyNamespace\.MyType\..*" /> -->
+    <Publicize Include="Sandbox.Game" MemberPattern="^.*?\.MyTerminalComparer" />
+    <Publicize Include="Sandbox.Game" MemberPattern="^.*?\.MyTerminalComparer\..*" />
+    <Publicize Include="Sandbox.Game" MemberPattern="^.*?\.MyTerminalControlPanel" />
+    <Publicize Include="Sandbox.Game" MemberPattern="^.*?\.MyTerminalControlPanel\..*" />
+  </ItemGroup>  
 </Project>

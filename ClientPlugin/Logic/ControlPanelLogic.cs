@@ -1,10 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
-using ClientPlugin.Extensions;
-using HarmonyLib;
-using Sandbox.Game.Entities.Cube;
-using Sandbox.Game.GameSystems;
 using Sandbox.Graphics.GUI;
 using VRage.Utils;
 
@@ -12,14 +7,14 @@ namespace ClientPlugin.Logic
 {
     public class ControlPanelLogic
     {
-        private object controlPanel;
+        private readonly MyTerminalControlPanel controlPanel;
         private readonly IMyGuiControlsParent controlsParent;
 
-        private readonly MethodInfo showAll_ClickedMethod;
-        private readonly MethodInfo UpdateItemAppearanceMethod;
-        private readonly MethodInfo TerminalSystemPropertyGetter;
-        private readonly MethodInfo AddBlockToListMethod;
-        private readonly FieldInfo m_originalBlockField;
+        // private readonly MethodInfo showAll_ClickedMethod;
+        // private readonly MethodInfo UpdateItemAppearanceMethod;
+        // private readonly MethodInfo TerminalSystemPropertyGetter;
+        // private readonly MethodInfo AddBlockToListMethod;
+        // private readonly FieldInfo m_originalBlockField;
 
         private bool m_showDefaultNames;
         private bool m_showAllTerminalBlocks;
@@ -37,25 +32,25 @@ namespace ClientPlugin.Logic
 
         private object ModeSelectorData => m_modeSelectorData.GetValueOrDefault((int)m_modeSelector.GetSelectedKey());
 
-        public ControlPanelLogic(object controlPanel, IMyGuiControlsParent controlsParent)
+        public ControlPanelLogic(MyTerminalControlPanel controlPanel, IMyGuiControlsParent controlsParent)
         {
             this.controlPanel = controlPanel;
             this.controlsParent = controlsParent;
 
             var controlPanelType = controlPanel.GetType();
             
-            showAll_ClickedMethod = AccessTools.DeclaredMethod(controlPanelType, "showAll_Clicked");
-            UpdateItemAppearanceMethod = AccessTools.DeclaredMethod(controlPanelType, "UpdateItemAppearance");
-            AddBlockToListMethod = AccessTools.DeclaredMethod(controlPanelType, "AddBlockToList");
-
-            TerminalSystemPropertyGetter = AccessTools.DeclaredPropertyGetter(controlPanelType, "TerminalSystem");
-            m_originalBlockField = AccessTools.DeclaredField(controlPanelType, "m_originalBlock");
+            // showAll_ClickedMethod = AccessTools.DeclaredMethod(controlPanelType, "showAll_Clicked");
+            // UpdateItemAppearanceMethod = AccessTools.DeclaredMethod(controlPanelType, "UpdateItemAppearance");
+            // AddBlockToListMethod = AccessTools.DeclaredMethod(controlPanelType, "AddBlockToList");
+            //
+            // TerminalSystemPropertyGetter = AccessTools.DeclaredPropertyGetter(controlPanelType, "TerminalSystem");
+            // m_originalBlockField = AccessTools.DeclaredField(controlPanelType, "m_originalBlock");
         }
 
         public void Init()
         {
             m_blockListbox = (MyGuiControlListbox)controlsParent.Controls.GetControlByName("FunctionalBlockListbox");
-            m_originalBlock = (MyTerminalBlock)m_originalBlockField.GetValue(controlPanel);
+            m_originalBlock = controlPanel.m_originalBlock;
 
             m_showDefaultNames = false;
             m_showDefaultNamesCheckbox = (MyGuiControlCheckbox)controlsParent.Controls.GetControlByName("ShowDefaultNames");
@@ -73,8 +68,7 @@ namespace ClientPlugin.Logic
         private void m_modeSelector_SelectedItemChanged(MyGuiControlCombobox obj)
         {
             m_showAllTerminalBlocks = !m_showAllTerminalBlocks;
-            // controlPanel.showAll_Clicked(null);
-            showAll_ClickedMethod.Invoke(controlPanel, new object[] { null });
+            controlPanel.showAll_Clicked(null);
         }
 
         private void showDefaultNames_Clicked(MyGuiControlCheckbox obj)
@@ -86,8 +80,7 @@ namespace ClientPlugin.Logic
             {
                 if (item.UserData is MyTerminalBlock block)
                 {
-                    //controlPanel.UpdateItemAppearance(block, item);
-                    UpdateItemAppearanceMethod.Invoke(controlPanel, new object[] { block, item });
+                    controlPanel.UpdateItemAppearance(block, item);
                 }
             }
         }
@@ -148,7 +141,7 @@ namespace ClientPlugin.Logic
 
         private void AddBlockGroupsToModeSelector()
         {
-            var terminalSystem = (MyGridTerminalSystem)TerminalSystemPropertyGetter.Invoke(controlPanel, new object[] { });
+            var terminalSystem = controlPanel.TerminalSystem;
 
             if (terminalSystem.BlockGroups == null)
                 return;
@@ -371,7 +364,7 @@ namespace ClientPlugin.Logic
         {
             RegisterBlock(myTerminalBlock);
             var visible = (myTerminalBlock == m_originalBlock || myTerminalBlock.ShowInTerminal || m_showAllTerminalBlocks) && IsBlockShownInMode(myTerminalBlock, ModeSelectorData);
-            AddBlockToListMethod.Invoke(controlPanel, new object[] { myTerminalBlock, visible });
+            controlPanel.AddBlockToList(myTerminalBlock, visible);
         }
     }
 }

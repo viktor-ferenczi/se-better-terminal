@@ -3,8 +3,6 @@ using System.Linq;
 using ClientPlugin.Logic;
 using ClientPlugin.Tools;
 using HarmonyLib;
-using Sandbox.Game.Entities.Cube;
-using Sandbox.Game.GameSystems;
 using Sandbox.Graphics.GUI;
 
 namespace ClientPlugin.Patches
@@ -16,7 +14,7 @@ namespace ClientPlugin.Patches
 
         [HarmonyPrefix]
         [HarmonyPatch("Init")]
-        private static bool InitPrefix(object __instance, IMyGuiControlsParent controlsParent)
+        private static bool InitPrefix(MyTerminalControlPanel __instance, IMyGuiControlsParent controlsParent)
         {
             logic = new ControlPanelLogic(__instance, controlsParent);
             return true;
