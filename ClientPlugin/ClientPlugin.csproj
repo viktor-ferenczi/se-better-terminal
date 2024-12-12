@@ -19,7 +19,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>DEBUG</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -28,7 +28,7 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
+    <DefineConstants></DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -491,6 +491,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Config.cs" />
+    <Compile Include="Extensions\Extensions.cs" />
+    <Compile Include="Logic\ControlPanelLogic.cs" />
+    <Compile Include="Logic\MyTerminalComparer.cs" />
+    <Compile Include="Patches\MyGuiScreenTerminalPatch.cs" />
+    <Compile Include="Patches\MyTerminalControlPanelPatch.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Settings\Elements\Button.cs" />
@@ -506,6 +511,8 @@
     <Compile Include="Settings\Layouts\Simple.cs" />
     <Compile Include="Settings\SettingsScreen.cs" />
     <Compile Include="Settings\ConfigStorage.cs" />
+    <Compile Include="Tools\Hashing.cs" />
+    <Compile Include="Tools\TranspilerHelpers.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="deploy.bat" />
