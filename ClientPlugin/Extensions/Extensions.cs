@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 using HarmonyLib;
+using Sandbox.Game.Entities;
+using Sandbox.Game.Entities.Cube;
+using Sandbox.Game.GameSystems;
 
 namespace ClientPlugin.Extensions
 {

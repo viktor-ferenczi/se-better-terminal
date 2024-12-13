@@ -3,6 +3,9 @@ using System.Linq;
 using ClientPlugin.Logic;
 using ClientPlugin.Tools;
 using HarmonyLib;
+using Sandbox.Game.Entities.Cube;
+using Sandbox.Game.GameSystems;
+using Sandbox.Game.Gui;
 using Sandbox.Graphics.GUI;
 
 namespace ClientPlugin.Patches

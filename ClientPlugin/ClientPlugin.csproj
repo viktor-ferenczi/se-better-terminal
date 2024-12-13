@@ -539,10 +539,13 @@
     <PublicizerClearCacheOnClean>true</PublicizerClearCacheOnClean>
   </PropertyGroup>
   <ItemGroup>
-    <!-- <Publicize Include="MyAssemblyFileName" MemberPattern="^MyNamespace\.MyType\..*" /> -->
-    <Publicize Include="Sandbox.Game" MemberPattern="^.*?\.MyTerminalComparer" />
-    <Publicize Include="Sandbox.Game" MemberPattern="^.*?\.MyTerminalComparer\..*" />
-    <Publicize Include="Sandbox.Game" MemberPattern="^.*?\.MyTerminalControlPanel" />
-    <Publicize Include="Sandbox.Game" MemberPattern="^.*?\.MyTerminalControlPanel\..*" />
+    <Publicize Include="Sandbox.Game:Sandbox.Game.Gui.MyTerminalControlPanel" />
+    <Publicize Include="Sandbox.Game:Sandbox.Game.Gui.MyTerminalControlPanel.m_originalBlock" />
+    <Publicize Include="Sandbox.Game:Sandbox.Game.Gui.MyTerminalControlPanel.showAll_Clicked" />
+    <Publicize Include="Sandbox.Game:Sandbox.Game.Gui.MyTerminalControlPanel.UpdateItemAppearance" />
+    <Publicize Include="Sandbox.Game:Sandbox.Game.Gui.MyTerminalControlPanel.AddBlockToList" />
+    <Publicize Include="Sandbox.Game:Sandbox.Game.GameSystems.MyBlockGroup.Blocks" />
+    <Publicize Include="Sandbox.Game:Sandbox.Game.Screens.Helpers.MyTerminalComparer" />
+    <Publicize Include="Sandbox.Game:Sandbox.Game.Screens.Helpers.MyTerminalComparer.Static" />
   </ItemGroup>  
 </Project>

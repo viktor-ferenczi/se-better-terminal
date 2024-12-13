@@ -1,5 +1,10 @@
 using System;
 using System.Collections.Generic;
+using ClientPlugin.Extensions;
+using Sandbox.Game.Entities.Cube;
+using Sandbox.Game.GameSystems;
+using Sandbox.Game.Gui;
+using Sandbox.Game.Screens.Helpers;
 using Sandbox.Graphics.GUI;
 using VRage.Utils;
 
@@ -335,7 +340,7 @@ namespace ClientPlugin.Logic
                 m_blocksByGroup[groupName] = blocks = new HashSet<long>();
             }
 
-            foreach (var terminalBlock in group.GetBlocksField())
+            foreach (var terminalBlock in group.Blocks)
             {
                 var entityId = terminalBlock.EntityId;
                 blocks.Add(entityId);
