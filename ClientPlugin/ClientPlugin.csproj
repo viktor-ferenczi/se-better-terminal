@@ -494,7 +494,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Config.cs" />
-    <Compile Include="Extensions\Extensions.cs" />
     <Compile Include="Logic\ControlPanelLogic.cs" />
     <Compile Include="Patches\MyGuiScreenTerminalPatch.cs" />
     <Compile Include="Patches\MyTerminalControlPanelPatch.cs" />
@@ -518,6 +517,10 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="deploy.bat" />
+    <Content Include="Patches\MyTerminalControlPanelPatch.PopulateBlockListTranspiler.Net4.original.il" />
+    <Content Include="Patches\MyTerminalControlPanelPatch.PopulateBlockListTranspiler.Net4.patched.il" />
+    <Content Include="Patches\MyTerminalControlPanelPatch.UpdateItemAppearanceTranspiler.Net4.original.il" />
+    <Content Include="Patches\MyTerminalControlPanelPatch.UpdateItemAppearanceTranspiler.Net4.patched.il" />
     <Content Include="PluginHub.xml" />
   </ItemGroup>
   <ItemGroup>
@@ -547,5 +550,7 @@
     <Publicize Include="Sandbox.Game:Sandbox.Game.GameSystems.MyBlockGroup.Blocks" />
     <Publicize Include="Sandbox.Game:Sandbox.Game.Screens.Helpers.MyTerminalComparer" />
     <Publicize Include="Sandbox.Game:Sandbox.Game.Screens.Helpers.MyTerminalComparer.Static" />
+    <Publicize Include="Sandbox.Game:Sandbox.Game.Entities.MyThrust.GetDirectionString" />
+    <Publicize Include="Sandbox.Game:Sandbox.Game.Entities.Cube.MyTerminalBlock.m_defaultCustomName" />
   </ItemGroup>  
 </Project>

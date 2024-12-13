@@ -1,12 +1,15 @@
 using System;
 using System.Collections.Generic;
-using ClientPlugin.Extensions;
+using System.Diagnostics;
+using System.Text;
+using Sandbox.Game.Entities;
 using Sandbox.Game.Entities.Cube;
 using Sandbox.Game.GameSystems;
 using Sandbox.Game.Gui;
 using Sandbox.Game.Screens.Helpers;
 using Sandbox.Graphics.GUI;
 using VRage.Utils;
+using VRageMath;
 
 namespace ClientPlugin.Logic
 {
@@ -14,12 +17,6 @@ namespace ClientPlugin.Logic
     {
         private readonly MyTerminalControlPanel controlPanel;
         private readonly IMyGuiControlsParent controlsParent;
-
-        // private readonly MethodInfo showAll_ClickedMethod;
-        // private readonly MethodInfo UpdateItemAppearanceMethod;
-        // private readonly MethodInfo TerminalSystemPropertyGetter;
-        // private readonly MethodInfo AddBlockToListMethod;
-        // private readonly FieldInfo m_originalBlockField;
 
         private bool m_showDefaultNames;
         private bool m_showAllTerminalBlocks;
@@ -39,21 +36,12 @@ namespace ClientPlugin.Logic
 
         public ControlPanelLogic(MyTerminalControlPanel controlPanel, IMyGuiControlsParent controlsParent)
         {
+            Debug.Assert(controlPanel != null);
+            Debug.Assert(controlsParent != null);
+            
             this.controlPanel = controlPanel;
             this.controlsParent = controlsParent;
 
-            var controlPanelType = controlPanel.GetType();
-            
-            // showAll_ClickedMethod = AccessTools.DeclaredMethod(controlPanelType, "showAll_Clicked");
-            // UpdateItemAppearanceMethod = AccessTools.DeclaredMethod(controlPanelType, "UpdateItemAppearance");
-            // AddBlockToListMethod = AccessTools.DeclaredMethod(controlPanelType, "AddBlockToList");
-            //
-            // TerminalSystemPropertyGetter = AccessTools.DeclaredPropertyGetter(controlPanelType, "TerminalSystem");
-            // m_originalBlockField = AccessTools.DeclaredField(controlPanelType, "m_originalBlock");
-        }
-
-        public void Init()
-        {
             m_blockListbox = (MyGuiControlListbox)controlsParent.Controls.GetControlByName("FunctionalBlockListbox");
             m_originalBlock = controlPanel.m_originalBlock;
 
@@ -68,6 +56,12 @@ namespace ClientPlugin.Logic
             m_modeSelector.Enabled = true;
             m_modeSelector.SelectedItemChanged += m_modeSelector_SelectedItemChanged;
             m_modeSelector.SetToolTip(MyStringId.GetOrCompute("Block list mode selector"));
+        }
+
+        public void Close()
+        {
+            m_showDefaultNamesCheckbox.IsCheckedChanged -= showDefaultNames_Clicked;
+            m_modeSelector.SelectedItemChanged -= m_modeSelector_SelectedItemChanged;
         }
 
         private void m_modeSelector_SelectedItemChanged(MyGuiControlCombobox obj)
@@ -370,6 +364,37 @@ namespace ClientPlugin.Logic
             RegisterBlock(myTerminalBlock);
             var visible = (myTerminalBlock == m_originalBlock || myTerminalBlock.ShowInTerminal || m_showAllTerminalBlocks) && IsBlockShownInMode(myTerminalBlock, ModeSelectorData);
             controlPanel.AddBlockToList(myTerminalBlock, visible);
+        }
+
+        public void PopulateBlockList_AddBlocks(MyTerminalBlock[] blocks)
+        {
+            var modeSelectorData = ModeSelectorData;
+            var originalBlock = controlPanel.m_originalBlock;
+            foreach (var terminalBlock in blocks)
+            {
+                RegisterBlock(terminalBlock);
+                var visible = (terminalBlock == originalBlock || terminalBlock.ShowInTerminal || m_showAllTerminalBlocks) && IsBlockShownInMode(terminalBlock, modeSelectorData);
+                controlPanel.AddBlockToList(terminalBlock, visible);
+            }
+        }
+
+        public void UpdateItemAppearance_ShowDefaultNameFilter(MyTerminalBlock block, MyGuiControlListbox.Item item)
+        {
+            if (m_showDefaultNames)
+            {
+                item.Text.AppendStringBuilder(block.m_defaultCustomName);
+                if (block is MyThrust thruster && thruster.GridThrustDirection != Vector3I.Zero)
+                {
+                    var name = item.Text.ToString().TrimEnd();
+                    var direction = thruster.GetDirectionString();
+                    item.Text.Clear();
+                    item.Text.Append($"{name} ({direction})");
+                }
+            }
+            else
+            {
+                block.GetTerminalName(item.Text);
+            }
         }
     }
 }

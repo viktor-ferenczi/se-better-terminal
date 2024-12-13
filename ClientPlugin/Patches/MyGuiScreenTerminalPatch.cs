@@ -1,5 +1,6 @@
 using HarmonyLib;
 using Sandbox.Game.Gui;
+using Sandbox.Game.Screens.Helpers;
 using Sandbox.Graphics.GUI;
 using VRage.Utils;
 using VRageMath;
@@ -20,8 +21,8 @@ namespace ClientPlugin.Patches
             labelToHide.Visible = false;
             panelToHide.Visible = false;
 
-            var showAll = (MyGuiControlLabel)page.Controls.GetControlByName("ShowAll");
-            var searchBox = (MyGuiControlLabel)page.Controls.GetControlByName("FunctionalBlockSearch");
+            var showAll = (MyGuiControlButton)page.Controls.GetControlByName("ShowAll");
+            var searchBox = (MyGuiControlSearchBox)page.Controls.GetControlByName("FunctionalBlockSearch");
 
             MyGuiControlCheckbox showDefaultNames = new MyGuiControlCheckbox(showAll.Position + new Vector2(-0.0008f, 0.046f), originAlign: MyGuiDrawAlignEnum.HORISONTAL_LEFT_AND_VERTICAL_TOP)
             {
