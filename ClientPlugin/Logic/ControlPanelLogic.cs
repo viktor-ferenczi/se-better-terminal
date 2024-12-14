@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Sandbox.Game.Entities;
@@ -11,15 +12,22 @@ using Sandbox.Game.Screens.Helpers;
 using Sandbox.Graphics.GUI;
 using VRage.Utils;
 using VRageMath;
+using ClientPlugin.Extensions;
+using Sandbox.Common.ObjectBuilders;
 
 [assembly: IgnoresAccessChecksTo("Sandbox.Game")]
+
 namespace ClientPlugin.Logic
 {
     public class ControlPanelLogic
     {
+        // FIXME: Transfer of reference via global state
+        public static MyGuiControlButton RenameGroupButton;
+
         private readonly MyTerminalControlPanel controlPanel;
 
         private bool showDefaultNames;
+        private string originalGroupName;
 
         private MyGuiControlCheckbox showDefaultNamesCheckbox;
         private MyGuiControlListbox blockListbox;
@@ -31,18 +39,20 @@ namespace ClientPlugin.Logic
         private Dictionary<long, HashSet<string>> groupsByBlock = new Dictionary<long, HashSet<string>>();
         private Dictionary<string, HashSet<long>> blocksByGroup = new Dictionary<string, HashSet<long>>();
 
-        private object ModeSelectorData => modeSelectorItemData.GetValueOrDefault((int)modeSelectorCombobox.GetSelectedKey());
+        private object ModeSelectorData => modeSelectorItemData.GetValueOrDefault((int)modeSelectorCombobox.GetSelectedKey(), BlockListMode.Default);
 
         public ControlPanelLogic(MyTerminalControlPanel controlPanel, IMyGuiControlsParent controlsParent)
         {
             Debug.Assert(controlPanel != null);
             Debug.Assert(controlsParent != null);
-            
+
             this.controlPanel = controlPanel;
 
             blockListbox = (MyGuiControlListbox)controlsParent.Controls.GetControlByName("FunctionalBlockListbox");
 
             showDefaultNames = false;
+            SetOriginalGroupName("");
+
             showDefaultNamesCheckbox = (MyGuiControlCheckbox)controlsParent.Controls.GetControlByName("ShowDefaultNames");
             showDefaultNamesCheckbox.IsChecked = showDefaultNames;
             showDefaultNamesCheckbox.Enabled = true;
@@ -53,12 +63,47 @@ namespace ClientPlugin.Logic
             modeSelectorCombobox.Enabled = true;
             modeSelectorCombobox.SelectedItemChanged += m_modeSelector_SelectedItemChanged;
             modeSelectorCombobox.SetToolTip(MyStringId.GetOrCompute("Block list mode selector"));
+
+            if (RenameGroupButton != null)
+            {
+                RenameGroupButton.Enabled = false;
+                RenameGroupButton.SetToolTip(MyStringId.GetOrCompute("Rename group"));
+                RenameGroupButton.ButtonClicked += OnRenameGroupButtonClicked;
+            }
+
+            if (controlPanel.m_groupName != null)
+            {
+                controlPanel.m_groupName.TextChanged += OnGroupNameChanged;
+            }
+        }
+
+        private void SetOriginalGroupName(string groupName)
+        {
+            originalGroupName = groupName;
+
+            if (RenameGroupButton != null)
+            {
+                RenameGroupButton.Enabled = false;
+                RenameGroupButton.SetToolTip(groupName == ""
+                    ? MyStringId.GetOrCompute("Select a block group to rename it")
+                    : MyStringId.GetOrCompute($"Rename group: {groupName}"));
+            }
         }
 
         public void Close()
         {
             showDefaultNamesCheckbox.IsCheckedChanged -= showDefaultNames_Clicked;
             modeSelectorCombobox.SelectedItemChanged -= m_modeSelector_SelectedItemChanged;
+
+            if (RenameGroupButton != null)
+            {
+                RenameGroupButton.ButtonClicked -= OnRenameGroupButtonClicked;
+            }
+
+            if (controlPanel.m_groupName != null)
+            {
+                controlPanel.m_groupName.TextChanged -= OnGroupNameChanged;
+            }
         }
 
         private void m_modeSelector_SelectedItemChanged(MyGuiControlCombobox obj)
@@ -180,8 +225,12 @@ namespace ClientPlugin.Logic
             if (blockListbox == null)
                 return;
 
-            var pattern = string.IsNullOrEmpty(text) ? null : text.ToLower().Split(' ');
-
+            var pattern = string.IsNullOrEmpty(text) ? null : text.ToLower().Split(' ').Where(part => !string.IsNullOrEmpty(part)).ToArray();
+            if (pattern != null && pattern.Length == 0)
+            {
+                pattern = null;
+            }
+            
             var defaultMode = false;
             var showHiddenBlocks = MyTerminalControlPanel.m_showAllTerminalBlocks;
 
@@ -210,7 +259,7 @@ namespace ClientPlugin.Logic
             }
 
             var originalBlock = controlPanel.m_originalBlock;
-            
+
             var groupCount = blocksByGroup.Count;
             var visibleGroupNames = new HashSet<string>(groupCount);
 
@@ -223,7 +272,7 @@ namespace ClientPlugin.Logic
                               IsBlockShownInMode(terminalBlock, modeSelectorData) && IsMatchingItem(item, pattern);
 
                 item.Visible = visible;
-                if (!visible)
+                if (!visible && !defaultMode)
                     continue;
 
                 if (groupsByBlock.TryGetValue(terminalBlock.EntityId, out var groupNames))
@@ -243,7 +292,34 @@ namespace ClientPlugin.Logic
                 item.Visible = visibleGroupNames.Contains(blockGroup.Name.ToString()) && IsMatchingItem(item, pattern);
             }
 
-            blockListbox.ScrollToolbarToTop();
+            if (pattern == null)
+            {
+                blockListbox.SelectedItems.Clear();
+                blockListbox.ScrollToolbarToTop();
+                return;
+            }
+
+            var firstSelectedVisibleItem = blockListbox.SelectedItems.FirstOrDefault(item => item.Visible);
+            var firstSelectedVisibleItemPosition = -1;
+            var visibleItemPosition = 0;
+            foreach (var item in blockListbox.Items)
+            {
+                if (!item.Visible)
+                    continue;
+                
+                if (item == firstSelectedVisibleItem)
+                {
+                    firstSelectedVisibleItemPosition = visibleItemPosition;
+                    break;
+                }
+
+                visibleItemPosition++;
+            }
+            
+            if (firstSelectedVisibleItemPosition >= 0)
+                blockListbox.SetScrollPosition(firstSelectedVisibleItemPosition);
+            else
+                blockListbox.ScrollToolbarToTop();
         }
 
         private bool IsMatchingItem(MyGuiControlListbox.Item item, string[] pattern)
@@ -377,6 +453,8 @@ namespace ClientPlugin.Logic
                 var visible = (terminalBlock == originalBlock || terminalBlock.ShowInTerminal || showAllTerminalBlocks) && IsBlockShownInMode(terminalBlock, modeSelectorData);
                 controlPanel.AddBlockToList(terminalBlock, visible);
             }
+
+            UpdateModeSelector();
         }
 
         public void UpdateItemAppearance_DefaultNameImplementation(MyTerminalBlock block, MyGuiControlListbox.Item item)
@@ -389,11 +467,141 @@ namespace ClientPlugin.Logic
             }
 
             itemText.Append(block.m_defaultCustomName.ToString().TrimEnd());
-            
+
             if (block is MyThrust thruster && thruster.GridThrustDirection != Vector3I.Zero)
             {
                 itemText.Append($" ({thruster.GetDirectionString()})");
             }
+        }
+
+        private void OnGroupNameChanged(MyGuiControlTextbox groupNameTextbox)
+        {
+            RenameGroupButton.Enabled = originalGroupName != "" &&
+                                        groupNameTextbox.Text.Trim() != originalGroupName &&
+                                        controlPanel.m_groupDelete.Enabled;
+        }
+
+        public void AfterSelectBlocks()
+        {
+            var currentGroups = controlPanel.m_currentGroups;
+            SetOriginalGroupName(currentGroups.Count == 1 ? currentGroups[0].Name.ToString().Trim() : "");
+        }
+
+        private void OnRenameGroupButtonClicked(MyGuiControlButton obj)
+        {
+            var currentGroups = controlPanel.m_currentGroups;
+            if (currentGroups.Count != 1)
+            {
+                MyLog.Default.Warning($"BetterTerminal: No loaded group to rename");
+                return;
+            }
+
+            var oldGroup = currentGroups[0];
+            var oldName = oldGroup.Name.ToString();
+            var newName = controlPanel.m_groupName.Text.Trim();
+
+#if DEBUG
+            MyLog.Default.Info($"BetterTerminal: Renaming group: {oldName} => {newName}");
+#endif
+
+            // Make sure no group with that new name exists
+            var groupKeyInModeSelector = -1;
+            foreach (var (key, data) in modeSelectorItemData)
+            {
+                if (!(data is MyBlockGroup blockGroup))
+                    continue;
+
+                var existingGroupName = blockGroup.Name.ToString();
+                if (existingGroupName == newName)
+                {
+                    MyGuiSandbox.AddScreen(
+                        MyGuiSandbox.CreateMessageBox(
+                            messageText: new StringBuilder($"Group already exists: {newName}"),
+                            messageCaption: new StringBuilder("Better Terminal: Error")));
+                    return;
+                }
+
+                if (existingGroupName == oldName)
+                {
+                    groupKeyInModeSelector = key;
+                }
+            }
+
+            if (groupKeyInModeSelector < 0)
+            {
+                MyLog.Default.Warning($"BetterTerminal: Cannot find existing group to rename: {oldName}");
+                return;
+            }
+
+#if DEBUG
+            MyLog.Default.Info($"BetterTerminal: Good, there is no colliding group");
+#endif
+
+            // Create a group with the new name, so it will contain the same blocks as the old group
+#if DEBUG
+            MyLog.Default.Info($"BetterTerminal: Saving as new group: {oldName}");
+#endif
+            controlPanel.groupSave_ButtonClicked(null);
+            if (controlPanel.m_currentGroups.Count != 1 || controlPanel.m_currentGroups[0].Name.ToString() != newName)
+            {
+                MyLog.Default.Warning($"BetterTerminal: Failed to create new group: {newName}");
+                return;
+            }
+
+            // Redirect references in block toolbar slots to the new group
+            foreach (var blockListitem in blockListbox.Items)
+            {
+                if (!(blockListitem.UserData is MyTerminalBlock terminalBlock))
+                    continue;
+
+                var toolbar = terminalBlock.GetToolbar();
+                if (toolbar == null)
+                    continue;
+
+                var toolbarBuilder = toolbar.GetObjectBuilder();
+                foreach (var slotBuilder in toolbarBuilder.Slots)
+                {
+                    if (!(slotBuilder.Data is MyObjectBuilder_ToolbarItemTerminalGroup toolbarItemTerminalGroupBuilder))
+                        continue;
+
+                    if (toolbarItemTerminalGroupBuilder.GroupName != oldName)
+                        continue;
+
+#if DEBUG
+                    MyLog.Default.Info($"BetterTerminal: Redirecting group in toolbar slot {slotBuilder.Index} of {terminalBlock.GetSafeName()}");
+#endif
+                    toolbarItemTerminalGroupBuilder.GroupName = newName;
+                    toolbar.SetItemAtSlot(slotBuilder.Index, MyToolbarItemFactory.CreateToolbarItem(toolbarItemTerminalGroupBuilder));
+                }
+            }
+
+            // Delete the old group
+#if DEBUG
+            MyLog.Default.Info($"BetterTerminal: Deleting old group: {oldName}");
+#endif
+            controlPanel.TerminalSystem.RemoveGroup(oldGroup, true);
+
+#if DEBUG
+            MyLog.Default.Info($"BetterTerminal: Finished renaming group: {oldName} => {newName}");
+#endif
+
+            controlPanel.RefreshBlockList(GetSelectedBlocks());
+            blockSearch_TextChanged(controlPanel.m_searchBox.SearchText);
+            blockListbox.ScrollToFirstSelection();
+        }
+
+        private MyTerminalBlock[] GetSelectedBlocks()
+        {
+            return blockListbox.SelectedItems
+                .Where(item => item.UserData is MyTerminalBlock)
+                .Select(item => (MyTerminalBlock)item.UserData)
+                .ToArray();
+        }
+
+        public void SelectNoneAndScrollBlockListToTop()
+        {
+            blockListbox.SelectedItems.Clear();
+            blockListbox.ScrollToolbarToTop();
         }
     }
 }

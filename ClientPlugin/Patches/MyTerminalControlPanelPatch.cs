@@ -7,9 +7,7 @@ using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using ClientPlugin.Logic;
 using ClientPlugin.Tools;
-using Epic.OnlineServices.P2P;
 using HarmonyLib;
-using Havok;
 using Sandbox.Game.Entities.Cube;
 using Sandbox.Game.GameSystems;
 using Sandbox.Game.Gui;
@@ -45,6 +43,7 @@ namespace ClientPlugin.Patches
         private static void InitPostfix()
         {
             logic.UpdateModeSelector();
+            logic.SelectNoneAndScrollBlockListToTop();
         }
 
         #region Groups
@@ -75,6 +74,13 @@ namespace ClientPlugin.Patches
         private static void groupSave_ButtonClickedPostfix(MyGuiControlButton obj)
         {
             logic.UpdateModeSelector();
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch("SelectBlocks", new Type[0])]
+        private static void SelectBlocksPostfix()
+        {
+            logic.AfterSelectBlocks();
         }
 
         #endregion Groups
