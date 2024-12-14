@@ -1,4 +1,6 @@
-// b696371a
+// efe47d49
+ldarg.0
+call static System.Void ClientPlugin.Patches.MyTerminalControlPanelPatch::PopulateBlockList_Top(Sandbox.Game.Gui.MyTerminalControlPanel terminalControlPanel)
 ldarg.0
 call Sandbox.Game.GameSystems.MyGridTerminalSystem Sandbox.Game.Gui.MyTerminalControlPanel::get_TerminalSystem()
 brtrue.s L0

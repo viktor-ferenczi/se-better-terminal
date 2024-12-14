@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Entities.Cube;
@@ -11,28 +12,26 @@ using Sandbox.Graphics.GUI;
 using VRage.Utils;
 using VRageMath;
 
+[assembly: IgnoresAccessChecksTo("Sandbox.Game")]
 namespace ClientPlugin.Logic
 {
     public class ControlPanelLogic
     {
         private readonly MyTerminalControlPanel controlPanel;
-        private readonly IMyGuiControlsParent controlsParent;
 
-        private bool m_showDefaultNames;
-        private bool m_showAllTerminalBlocks;
+        private bool showDefaultNames;
 
-        private MyGuiControlCheckbox m_showDefaultNamesCheckbox;
-        private MyGuiControlListbox m_blockListbox;
-        private MyTerminalBlock m_originalBlock;
+        private MyGuiControlCheckbox showDefaultNamesCheckbox;
+        private MyGuiControlListbox blockListbox;
 
-        private MyGuiControlCombobox m_modeSelector;
-        private Dictionary<int, object> m_modeSelectorData = new Dictionary<int, object>();
+        private MyGuiControlCombobox modeSelectorCombobox;
+        private Dictionary<int, object> modeSelectorItemData = new Dictionary<int, object>();
 
-        private HashSet<string> m_blockTypes = new HashSet<string>();
-        private Dictionary<long, HashSet<string>> m_groupsByBlock = new Dictionary<long, HashSet<string>>();
-        private Dictionary<string, HashSet<long>> m_blocksByGroup = new Dictionary<string, HashSet<long>>();
+        private HashSet<string> blockTypes = new HashSet<string>();
+        private Dictionary<long, HashSet<string>> groupsByBlock = new Dictionary<long, HashSet<string>>();
+        private Dictionary<string, HashSet<long>> blocksByGroup = new Dictionary<string, HashSet<long>>();
 
-        private object ModeSelectorData => m_modeSelectorData.GetValueOrDefault((int)m_modeSelector.GetSelectedKey());
+        private object ModeSelectorData => modeSelectorItemData.GetValueOrDefault((int)modeSelectorCombobox.GetSelectedKey());
 
         public ControlPanelLogic(MyTerminalControlPanel controlPanel, IMyGuiControlsParent controlsParent)
         {
@@ -40,41 +39,38 @@ namespace ClientPlugin.Logic
             Debug.Assert(controlsParent != null);
             
             this.controlPanel = controlPanel;
-            this.controlsParent = controlsParent;
 
-            m_blockListbox = (MyGuiControlListbox)controlsParent.Controls.GetControlByName("FunctionalBlockListbox");
-            m_originalBlock = controlPanel.m_originalBlock;
+            blockListbox = (MyGuiControlListbox)controlsParent.Controls.GetControlByName("FunctionalBlockListbox");
 
-            m_showDefaultNames = false;
-            m_showDefaultNamesCheckbox = (MyGuiControlCheckbox)controlsParent.Controls.GetControlByName("ShowDefaultNames");
-            m_showDefaultNamesCheckbox.IsChecked = m_showDefaultNames;
-            m_showDefaultNamesCheckbox.Enabled = true;
-            m_showDefaultNamesCheckbox.IsCheckedChanged += showDefaultNames_Clicked;
-            m_showDefaultNamesCheckbox.SetToolTip(MyStringId.GetOrCompute("Show and search original block names"));
+            showDefaultNames = false;
+            showDefaultNamesCheckbox = (MyGuiControlCheckbox)controlsParent.Controls.GetControlByName("ShowDefaultNames");
+            showDefaultNamesCheckbox.IsChecked = showDefaultNames;
+            showDefaultNamesCheckbox.Enabled = true;
+            showDefaultNamesCheckbox.IsCheckedChanged += showDefaultNames_Clicked;
+            showDefaultNamesCheckbox.SetToolTip(MyStringId.GetOrCompute("Show and search original block names"));
 
-            m_modeSelector = (MyGuiControlCombobox)controlsParent.Controls.GetControlByName("ModeSelector");
-            m_modeSelector.Enabled = true;
-            m_modeSelector.SelectedItemChanged += m_modeSelector_SelectedItemChanged;
-            m_modeSelector.SetToolTip(MyStringId.GetOrCompute("Block list mode selector"));
+            modeSelectorCombobox = (MyGuiControlCombobox)controlsParent.Controls.GetControlByName("ModeSelector");
+            modeSelectorCombobox.Enabled = true;
+            modeSelectorCombobox.SelectedItemChanged += m_modeSelector_SelectedItemChanged;
+            modeSelectorCombobox.SetToolTip(MyStringId.GetOrCompute("Block list mode selector"));
         }
 
         public void Close()
         {
-            m_showDefaultNamesCheckbox.IsCheckedChanged -= showDefaultNames_Clicked;
-            m_modeSelector.SelectedItemChanged -= m_modeSelector_SelectedItemChanged;
+            showDefaultNamesCheckbox.IsCheckedChanged -= showDefaultNames_Clicked;
+            modeSelectorCombobox.SelectedItemChanged -= m_modeSelector_SelectedItemChanged;
         }
 
         private void m_modeSelector_SelectedItemChanged(MyGuiControlCombobox obj)
         {
-            m_showAllTerminalBlocks = !m_showAllTerminalBlocks;
-            controlPanel.showAll_Clicked(null);
+            controlPanel.blockSearch_TextChanged(controlPanel.m_searchBox.SearchText);
         }
 
         private void showDefaultNames_Clicked(MyGuiControlCheckbox obj)
         {
-            m_showDefaultNames = !m_showDefaultNames;
+            showDefaultNames = !showDefaultNames;
 
-            var items = m_blockListbox.Items;
+            var items = blockListbox.Items;
             foreach (var item in items)
             {
                 if (item.UserData is MyTerminalBlock block)
@@ -101,8 +97,8 @@ namespace ClientPlugin.Logic
         {
             var previousData = ModeSelectorData;
 
-            m_modeSelector.ClearItems();
-            m_modeSelectorData.Clear();
+            modeSelectorCombobox.ClearItems();
+            modeSelectorItemData.Clear();
 
             AddModeSelectorItem(BlockListMode.Default, "Anywhere (default mode)");
             AddModeSelectorItem(BlockListMode.ShipOrStation, "This ship or station only");
@@ -120,12 +116,12 @@ namespace ClientPlugin.Logic
             var selected = false;
             if (previousData != null)
             {
-                var itemCount = m_modeSelector.GetItemsCount();
+                var itemCount = modeSelectorCombobox.GetItemsCount();
                 for (var i = 0; i < itemCount; i++)
                 {
-                    if (m_modeSelectorData[i] == previousData)
+                    if (modeSelectorItemData[i] == previousData)
                     {
-                        m_modeSelector.SelectItemByIndex(i);
+                        modeSelectorCombobox.SelectItemByIndex(i);
                         selected = true;
                         break;
                     }
@@ -134,13 +130,15 @@ namespace ClientPlugin.Logic
 
             if (!selected)
             {
-                m_modeSelector.SelectItemByIndex(0);
+                modeSelectorCombobox.SelectItemByIndex(0);
             }
         }
 
         private void AddBlockGroupsToModeSelector()
         {
             var terminalSystem = controlPanel.TerminalSystem;
+            if (terminalSystem == null)
+                return;
 
             if (terminalSystem.BlockGroups == null)
                 return;
@@ -160,7 +158,7 @@ namespace ClientPlugin.Logic
 
         private void AddBlockTypesToModeSelector()
         {
-            var blockTypeList = new List<string>(m_blockTypes);
+            var blockTypeList = new List<string>(blockTypes);
             blockTypeList.Sort();
 
             AddModeSelectorItem(null, "======== BLOCK TYPES ==========");
@@ -172,20 +170,20 @@ namespace ClientPlugin.Logic
 
         private void AddModeSelectorItem(object data, string label)
         {
-            var key = m_modeSelector.GetItemsCount();
-            m_modeSelectorData[key] = data;
-            m_modeSelector.AddItem(key, MyStringId.GetOrCompute(label), key);
+            var key = modeSelectorCombobox.GetItemsCount();
+            modeSelectorItemData[key] = data;
+            modeSelectorCombobox.AddItem(key, MyStringId.GetOrCompute(label), key);
         }
 
         public void blockSearch_TextChanged(string text)
         {
-            if (m_blockListbox == null)
+            if (blockListbox == null)
                 return;
 
             var pattern = string.IsNullOrEmpty(text) ? null : text.ToLower().Split(' ');
 
             var defaultMode = false;
-            var showHiddenBlocks = m_showAllTerminalBlocks;
+            var showHiddenBlocks = MyTerminalControlPanel.m_showAllTerminalBlocks;
 
             var modeSelectorData = ModeSelectorData;
             if (modeSelectorData is BlockListMode mode)
@@ -211,22 +209,24 @@ namespace ClientPlugin.Logic
                 showHiddenBlocks = true;
             }
 
-            var groupCount = m_blocksByGroup.Count;
+            var originalBlock = controlPanel.m_originalBlock;
+            
+            var groupCount = blocksByGroup.Count;
             var visibleGroupNames = new HashSet<string>(groupCount);
 
-            foreach (var item in m_blockListbox.Items)
+            foreach (var item in blockListbox.Items)
             {
                 if (!(item.UserData is MyTerminalBlock terminalBlock))
                     continue;
 
-                var visible = (terminalBlock.ShowInTerminal || showHiddenBlocks || (defaultMode && terminalBlock == m_originalBlock)) &&
+                var visible = (terminalBlock.ShowInTerminal || showHiddenBlocks || (defaultMode && terminalBlock == originalBlock)) &&
                               IsBlockShownInMode(terminalBlock, modeSelectorData) && IsMatchingItem(item, pattern);
 
                 item.Visible = visible;
                 if (!visible)
                     continue;
 
-                if (m_groupsByBlock.TryGetValue(terminalBlock.EntityId, out var groupNames))
+                if (groupsByBlock.TryGetValue(terminalBlock.EntityId, out var groupNames))
                 {
                     foreach (var groupName in groupNames)
                     {
@@ -235,7 +235,7 @@ namespace ClientPlugin.Logic
                 }
             }
 
-            foreach (var item in m_blockListbox.Items)
+            foreach (var item in blockListbox.Items)
             {
                 if (!(item.UserData is MyBlockGroup blockGroup))
                     continue;
@@ -243,7 +243,7 @@ namespace ClientPlugin.Logic
                 item.Visible = visibleGroupNames.Contains(blockGroup.Name.ToString()) && IsMatchingItem(item, pattern);
             }
 
-            m_blockListbox.ScrollToolbarToTop();
+            blockListbox.ScrollToolbarToTop();
         }
 
         private bool IsMatchingItem(MyGuiControlListbox.Item item, string[] pattern)
@@ -274,16 +274,16 @@ namespace ClientPlugin.Logic
                             break;
 
                         case BlockListMode.ShipOrStation:
-                            return terminalBlock.CubeGrid.IsSameConstructAs(m_originalBlock.CubeGrid);
+                            return terminalBlock.CubeGrid.IsSameConstructAs(controlPanel.m_originalBlock.CubeGrid);
 
                         case BlockListMode.Subgrid:
-                            return terminalBlock.CubeGrid.EntityId == m_originalBlock.CubeGrid.EntityId;
+                            return terminalBlock.CubeGrid.EntityId == controlPanel.m_originalBlock.CubeGrid.EntityId;
 
                         case BlockListMode.Ungrouped:
-                            return !m_groupsByBlock.TryGetValue(terminalBlock.EntityId, out var groups1) || groups1.Count == 0;
+                            return !groupsByBlock.TryGetValue(terminalBlock.EntityId, out var groups1) || groups1.Count == 0;
 
                         case BlockListMode.Multigrouped:
-                            return m_groupsByBlock.TryGetValue(terminalBlock.EntityId, out var groups2) && groups2.Count > 1;
+                            return groupsByBlock.TryGetValue(terminalBlock.EntityId, out var groups2) && groups2.Count > 1;
 
                         case BlockListMode.Damaged:
                             return terminalBlock.SlimBlock.Integrity < terminalBlock.SlimBlock.MaxIntegrity;
@@ -301,7 +301,7 @@ namespace ClientPlugin.Logic
                     return true;
 
                 case MyBlockGroup blockGroup:
-                    return m_groupsByBlock.TryGetValue(terminalBlock.EntityId, out var groupNames) && groupNames.Contains(blockGroup.Name.ToString());
+                    return groupsByBlock.TryGetValue(terminalBlock.EntityId, out var groupNames) && groupNames.Contains(blockGroup.Name.ToString());
 
                 case string blockTypeName:
                     return terminalBlock.BlockDefinition.DisplayNameText == blockTypeName;
@@ -312,14 +312,14 @@ namespace ClientPlugin.Logic
 
         public void RegisterBlock(MyTerminalBlock terminalBlock)
         {
-            m_blockTypes.Add(terminalBlock.BlockDefinition.DisplayNameText);
+            blockTypes.Add(terminalBlock.BlockDefinition.DisplayNameText);
         }
 
         public void UnregisterBlock(MyTerminalBlock terminalBlock)
         {
             var entityId = terminalBlock.EntityId;
-            m_groupsByBlock.Remove(entityId);
-            foreach (var blockIds in m_blocksByGroup.Values)
+            groupsByBlock.Remove(entityId);
+            foreach (var blockIds in blocksByGroup.Values)
             {
                 blockIds.Remove(entityId);
             }
@@ -329,18 +329,18 @@ namespace ClientPlugin.Logic
         {
             var groupName = group.Name.ToString();
 
-            if (!m_blocksByGroup.TryGetValue(groupName, out var blocks))
+            if (!blocksByGroup.TryGetValue(groupName, out var blocks))
             {
-                m_blocksByGroup[groupName] = blocks = new HashSet<long>();
+                blocksByGroup[groupName] = blocks = new HashSet<long>();
             }
 
             foreach (var terminalBlock in group.Blocks)
             {
                 var entityId = terminalBlock.EntityId;
                 blocks.Add(entityId);
-                if (!m_groupsByBlock.TryGetValue(entityId, out var groups))
+                if (!groupsByBlock.TryGetValue(entityId, out var groups))
                 {
-                    m_groupsByBlock[entityId] = groups = new HashSet<string>();
+                    groupsByBlock[entityId] = groups = new HashSet<string>();
                 }
 
                 groups.Add(groupName);
@@ -351,9 +351,9 @@ namespace ClientPlugin.Logic
         {
             var groupName = group.Name.ToString();
 
-            m_blocksByGroup.Remove(groupName);
+            blocksByGroup.Remove(groupName);
 
-            foreach (var groupNames in m_groupsByBlock.Values)
+            foreach (var groupNames in groupsByBlock.Values)
             {
                 groupNames.Remove(groupName);
             }
@@ -362,7 +362,7 @@ namespace ClientPlugin.Logic
         public void BlockAdded(MyTerminalBlock myTerminalBlock)
         {
             RegisterBlock(myTerminalBlock);
-            var visible = (myTerminalBlock == m_originalBlock || myTerminalBlock.ShowInTerminal || m_showAllTerminalBlocks) && IsBlockShownInMode(myTerminalBlock, ModeSelectorData);
+            var visible = (myTerminalBlock == controlPanel.m_originalBlock || myTerminalBlock.ShowInTerminal || MyTerminalControlPanel.m_showAllTerminalBlocks) && IsBlockShownInMode(myTerminalBlock, ModeSelectorData);
             controlPanel.AddBlockToList(myTerminalBlock, visible);
         }
 
@@ -370,30 +370,29 @@ namespace ClientPlugin.Logic
         {
             var modeSelectorData = ModeSelectorData;
             var originalBlock = controlPanel.m_originalBlock;
+            var showAllTerminalBlocks = MyTerminalControlPanel.m_showAllTerminalBlocks;
             foreach (var terminalBlock in blocks)
             {
                 RegisterBlock(terminalBlock);
-                var visible = (terminalBlock == originalBlock || terminalBlock.ShowInTerminal || m_showAllTerminalBlocks) && IsBlockShownInMode(terminalBlock, modeSelectorData);
+                var visible = (terminalBlock == originalBlock || terminalBlock.ShowInTerminal || showAllTerminalBlocks) && IsBlockShownInMode(terminalBlock, modeSelectorData);
                 controlPanel.AddBlockToList(terminalBlock, visible);
             }
         }
 
-        public void UpdateItemAppearance_ShowDefaultNameFilter(MyTerminalBlock block, MyGuiControlListbox.Item item)
+        public void UpdateItemAppearance_DefaultNameImplementation(MyTerminalBlock block, MyGuiControlListbox.Item item)
         {
-            if (m_showDefaultNames)
+            var itemText = item.Text;
+            if (!showDefaultNames)
             {
-                item.Text.AppendStringBuilder(block.m_defaultCustomName);
-                if (block is MyThrust thruster && thruster.GridThrustDirection != Vector3I.Zero)
-                {
-                    var name = item.Text.ToString().TrimEnd();
-                    var direction = thruster.GetDirectionString();
-                    item.Text.Clear();
-                    item.Text.Append($"{name} ({direction})");
-                }
+                block.GetTerminalName(itemText);
+                return;
             }
-            else
+
+            itemText.Append(block.m_defaultCustomName.ToString().TrimEnd());
+            
+            if (block is MyThrust thruster && thruster.GridThrustDirection != Vector3I.Zero)
             {
-                block.GetTerminalName(item.Text);
+                itemText.Append($" ({thruster.GetDirectionString()})");
             }
         }
     }

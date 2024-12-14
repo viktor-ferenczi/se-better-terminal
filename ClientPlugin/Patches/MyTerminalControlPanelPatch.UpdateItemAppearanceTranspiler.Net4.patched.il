@@ -1,7 +1,11 @@
-// c0f494df
+// e039a751
+ldarg.2
+callvirt System.Text.StringBuilder Sandbox.Graphics.GUI.Item::get_Text()
+callvirt System.Text.StringBuilder System.Text.StringBuilder::Clear()
+pop
 ldarg.1
 ldarg.2
-call static System.Void ClientPlugin.Patches.MyTerminalControlPanelPatch::UpdateItemAppearance_ShowDefaultNameFilter(Sandbox.Game.Entities.Cube.MyTerminalBlock block, Sandbox.Graphics.GUI.Item item)
+call static System.Void ClientPlugin.Patches.MyTerminalControlPanelPatch::UpdateItemAppearance_DefaultNameImplementation(Sandbox.Game.Entities.Cube.MyTerminalBlock block, Sandbox.Graphics.GUI.Item item)
 ldarg.1
 callvirt virtual System.Boolean Sandbox.Game.Entities.MyCubeBlock::get_IsFunctional()
 brtrue.s L0

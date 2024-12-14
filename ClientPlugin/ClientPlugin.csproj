@@ -22,6 +22,7 @@
     <DefineConstants>DEBUG</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>x64</PlatformTarget>
@@ -31,6 +32,7 @@
     <DefineConstants></DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="DirectShowLib, Version=2.1.0.1599, Culture=neutral, PublicKeyToken=null">
@@ -539,11 +541,16 @@
   </PropertyGroup>
   <PropertyGroup>
     <PublicizerLogFilePath>C:\\Temp\\Krafs.Publicizer.log</PublicizerLogFilePath>
+    <PublicizerRuntimeStrategies>Unsafe;IgnoresAccessChecksTo</PublicizerRuntimeStrategies>
     <PublicizerClearCacheOnClean>true</PublicizerClearCacheOnClean>
   </PropertyGroup>
   <ItemGroup>
     <Publicize Include="Sandbox.Game:Sandbox.Game.Gui.MyTerminalControlPanel" />
+    <Publicize Include="Sandbox.Game:Sandbox.Game.Gui.MyTerminalControlPanel.m_searchBox" />
     <Publicize Include="Sandbox.Game:Sandbox.Game.Gui.MyTerminalControlPanel.m_originalBlock" />
+    <Publicize Include="Sandbox.Game:Sandbox.Game.Gui.MyTerminalControlPanel.m_controlsParent" />
+    <Publicize Include="Sandbox.Game:Sandbox.Game.Gui.MyTerminalControlPanel.m_showAllTerminalBlocks" />
+    <Publicize Include="Sandbox.Game:Sandbox.Game.Gui.MyTerminalControlPanel.blockSearch_TextChanged" />
     <Publicize Include="Sandbox.Game:Sandbox.Game.Gui.MyTerminalControlPanel.showAll_Clicked" />
     <Publicize Include="Sandbox.Game:Sandbox.Game.Gui.MyTerminalControlPanel.UpdateItemAppearance" />
     <Publicize Include="Sandbox.Game:Sandbox.Game.Gui.MyTerminalControlPanel.AddBlockToList" />

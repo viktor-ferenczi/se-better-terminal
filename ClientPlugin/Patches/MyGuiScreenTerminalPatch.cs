@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using HarmonyLib;
 using Sandbox.Game.Gui;
 using Sandbox.Game.Screens.Helpers;
@@ -5,6 +6,7 @@ using Sandbox.Graphics.GUI;
 using VRage.Utils;
 using VRageMath;
 
+[assembly: IgnoresAccessChecksTo("Sandbox.Game")]
 namespace ClientPlugin.Patches
 {
     // ReSharper disable once UnusedType.Global
@@ -24,7 +26,7 @@ namespace ClientPlugin.Patches
             var showAll = (MyGuiControlButton)page.Controls.GetControlByName("ShowAll");
             var searchBox = (MyGuiControlSearchBox)page.Controls.GetControlByName("FunctionalBlockSearch");
 
-            MyGuiControlCheckbox showDefaultNames = new MyGuiControlCheckbox(showAll.Position + new Vector2(-0.0008f, 0.046f), originAlign: MyGuiDrawAlignEnum.HORISONTAL_LEFT_AND_VERTICAL_TOP)
+            MyGuiControlCheckbox showDefaultNames = new MyGuiControlCheckbox( showAll.Position + new Vector2(-0.0008f, 0.046f), originAlign: MyGuiDrawAlignEnum.HORISONTAL_LEFT_AND_VERTICAL_TOP)
             {
                 Name = "ShowDefaultNames"
             };

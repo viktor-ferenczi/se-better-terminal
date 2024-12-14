@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
 using ClientPlugin.Logic;
 using ClientPlugin.Tools;
 using Epic.OnlineServices.P2P;
@@ -13,6 +14,8 @@ using Sandbox.Game.Entities.Cube;
 using Sandbox.Game.GameSystems;
 using Sandbox.Game.Gui;
 using Sandbox.Graphics.GUI;
+
+[assembly: IgnoresAccessChecksTo("Sandbox.Game")]
 
 namespace ClientPlugin.Patches
 {
@@ -25,11 +28,16 @@ namespace ClientPlugin.Patches
         [HarmonyPatch("Init")]
         private static bool InitPrefix(MyTerminalControlPanel __instance, IMyGuiControlsParent controlsParent)
         {
+            CreateLogic(__instance, controlsParent);
+            return true;
+        }
+
+        private static void CreateLogic(MyTerminalControlPanel __instance, IMyGuiControlsParent controlsParent)
+        {
             if (logic != null)
                 logic.Close();
-            
+
             logic = new ControlPanelLogic(__instance, controlsParent);
-            return true;
         }
 
         [HarmonyPostfix]
@@ -132,8 +140,19 @@ namespace ClientPlugin.Patches
             var methodInfo = AccessTools.DeclaredMethod(typeof(MyTerminalControlPanelPatch), nameof(PopulateBlockList_AddBlocks));
             il.Insert(i, new CodeInstruction(OpCodes.Call, methodInfo));
 
+            // Initialize logic at the top
+            var reinitMethod = AccessTools.DeclaredMethod(typeof(MyTerminalControlPanelPatch), nameof(PopulateBlockList_Top));
+            i = 0;
+            il.Insert(i++, new CodeInstruction(OpCodes.Ldarg_0));
+            il.Insert(i, new CodeInstruction(OpCodes.Call, reinitMethod));
+
             il.RecordPatchedCode();
             return il;
+        }
+
+        private static void PopulateBlockList_Top(MyTerminalControlPanel terminalControlPanel)
+        {
+            CreateLogic(terminalControlPanel, terminalControlPanel.m_controlsParent);
         }
 
         private static void PopulateBlockList_AddBlocks(MyTerminalBlock[] blocks)
@@ -148,26 +167,27 @@ namespace ClientPlugin.Patches
             var il = code.ToList();
             il.RecordOriginalCode();
 
-            // Remove the first two statements:
-            // item.Text.Clear();
+            // Replace this statement:
             // block.GetTerminalName(item.Text);
-            var count = il.FindAllIndex(ci => ci.opcode == OpCodes.Ldarg_1)[1];
-            il.RemoveRange(0, count);
+            var blockLoads = il.FindAllIndex(ci => ci.opcode == OpCodes.Ldarg_1).ToArray();
+            Debug.Assert(blockLoads.Length >= 2);
+            var i = blockLoads[0]; // block.GetTerminalName(item.Text);
+            var j = blockLoads[1]; // if (!block.IsFunctional)
+            il.RemoveRange(i, j - i);
 
-            // Inject a call
-            var i = 0;
+            // Replace with logic to allow showing the default block names instead of the player defined ones
             il.Insert(i++, new CodeInstruction(OpCodes.Ldarg_1)); // block
             il.Insert(i++, new CodeInstruction(OpCodes.Ldarg_2)); // item
-            var methodInfo = AccessTools.DeclaredMethod(typeof(MyTerminalControlPanelPatch), nameof(UpdateItemAppearance_ShowDefaultNameFilter));
+            var methodInfo = AccessTools.DeclaredMethod(typeof(MyTerminalControlPanelPatch), nameof(UpdateItemAppearance_DefaultNameImplementation));
             il.Insert(i, new CodeInstruction(OpCodes.Call, methodInfo));
 
             il.RecordPatchedCode();
             return il;
         }
 
-        private static void UpdateItemAppearance_ShowDefaultNameFilter(MyTerminalBlock block, MyGuiControlListbox.Item item)
+        private static void UpdateItemAppearance_DefaultNameImplementation(MyTerminalBlock block, MyGuiControlListbox.Item item)
         {
-            logic.UpdateItemAppearance_ShowDefaultNameFilter(block, item);
+            logic.UpdateItemAppearance_DefaultNameImplementation(block, item);
         }
 
         #endregion
