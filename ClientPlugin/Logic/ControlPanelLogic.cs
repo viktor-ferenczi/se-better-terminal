@@ -48,6 +48,15 @@ namespace ClientPlugin.Logic
 
             this.controlPanel = controlPanel;
 
+            if (Config.Current.EnableBlockFilter)
+                PrepareModeSelector(controlsParent);
+            
+            if (Config.Current.EnableGroupRenaming)
+                PrepareGroupRenaming(controlPanel);
+        }
+
+        private void PrepareModeSelector(IMyGuiControlsParent controlsParent)
+        {
             blockListbox = (MyGuiControlListbox)controlsParent.Controls.GetControlByName("FunctionalBlockListbox");
 
             showDefaultNames = false;
@@ -63,7 +72,10 @@ namespace ClientPlugin.Logic
             modeSelectorCombobox.Enabled = true;
             modeSelectorCombobox.SelectedItemChanged += m_modeSelector_SelectedItemChanged;
             modeSelectorCombobox.SetToolTip(MyStringId.GetOrCompute("Block list mode selector"));
+        }
 
+        private void PrepareGroupRenaming(MyTerminalControlPanel controlPanel)
+        {
             if (RenameGroupButton != null)
             {
                 RenameGroupButton.Enabled = false;
@@ -92,17 +104,22 @@ namespace ClientPlugin.Logic
 
         public void Close()
         {
-            showDefaultNamesCheckbox.IsCheckedChanged -= showDefaultNames_Clicked;
-            modeSelectorCombobox.SelectedItemChanged -= m_modeSelector_SelectedItemChanged;
-
-            if (RenameGroupButton != null)
+            if (Config.Current.EnableBlockFilter)
             {
-                RenameGroupButton.ButtonClicked -= OnRenameGroupButtonClicked;
+                if (showDefaultNamesCheckbox != null)
+                    showDefaultNamesCheckbox.IsCheckedChanged -= showDefaultNames_Clicked;
+                
+                if (modeSelectorCombobox != null)
+                    modeSelectorCombobox.SelectedItemChanged -= m_modeSelector_SelectedItemChanged;
             }
 
-            if (controlPanel.m_groupName != null)
+            if (Config.Current.EnableGroupRenaming)
             {
-                controlPanel.m_groupName.TextChanged -= OnGroupNameChanged;
+                if (RenameGroupButton != null)
+                    RenameGroupButton.ButtonClicked -= OnRenameGroupButtonClicked;
+
+                if (controlPanel.m_groupName != null)
+                    controlPanel.m_groupName.TextChanged -= OnGroupNameChanged;
             }
         }
 
@@ -153,7 +170,7 @@ namespace ClientPlugin.Logic
             AddModeSelectorItem(BlockListMode.Damaged, "Damaged terminal blocks");
             AddModeSelectorItem(BlockListMode.Disabled, "Disabled functional blocks");
             AddModeSelectorItem(BlockListMode.Enabled, "Enabled functional blocks");
-            AddModeSelectorItem(BlockListMode.VisibleOnHud, "Blocks visible on HUD");
+            AddModeSelectorItem(BlockListMode.VisibleOnHud, "Blocks shown on HUD");
 
             AddBlockGroupsToModeSelector();
             AddBlockTypesToModeSelector();
@@ -444,6 +461,15 @@ namespace ClientPlugin.Logic
 
         public void PopulateBlockList_AddBlocks(MyTerminalBlock[] blocks)
         {
+            if (!Config.Current.EnableBlockFilter)
+            {
+                foreach (var terminalBlock in blocks)
+                {
+                    controlPanel.AddBlockToList(terminalBlock);
+                }
+                return;
+            }
+            
             var modeSelectorData = ModeSelectorData;
             var originalBlock = controlPanel.m_originalBlock;
             var showAllTerminalBlocks = MyTerminalControlPanel.m_showAllTerminalBlocks;
@@ -460,7 +486,7 @@ namespace ClientPlugin.Logic
         public void UpdateItemAppearance_DefaultNameImplementation(MyTerminalBlock block, MyGuiControlListbox.Item item)
         {
             var itemText = item.Text;
-            if (!showDefaultNames)
+            if (!Config.Current.EnableBlockFilter || !showDefaultNames)
             {
                 block.GetTerminalName(itemText);
                 return;
@@ -602,6 +628,15 @@ namespace ClientPlugin.Logic
         {
             blockListbox.SelectedItems.Clear();
             blockListbox.ScrollToolbarToTop();
+        }
+
+        public void SetSearchText(string searchText)
+        {
+            if (searchText == null || controlPanel.m_searchBox.SearchText == searchText)
+                return;
+
+            controlPanel.m_searchBox.SearchText = searchText;
+            controlPanel.blockSearch_TextChanged(searchText);
         }
     }
 }

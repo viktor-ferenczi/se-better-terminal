@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using ClientPlugin.Logic;
 using HarmonyLib;
@@ -14,11 +15,21 @@ namespace ClientPlugin.Patches
 {
     // ReSharper disable once UnusedType.Global
     [HarmonyPatch(typeof(MyGuiScreenTerminal))]
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
     public static class MyGuiScreenTerminalPatch
     {
         [HarmonyPostfix]
         [HarmonyPatch("CreateControlPanelPageControls")]
         private static void CreateControlPanelPageControlsPostfix(MyGuiScreenTerminal __instance, MyGuiControlTabPage page)
+        {
+            if (Config.Current.EnableBlockFilter)
+                AddModeSelector(page);
+
+            if (Config.Current.EnableGroupRenaming)
+                AddRenameGroupButton(__instance);
+        }
+
+        private static void AddModeSelector(MyGuiControlTabPage page)
         {
             var labelToHide = (MyGuiControlLabel)page.Controls.GetControlByName("ControlLabel");
             var panelToHide = page.Controls[page.Controls.IndexOf(labelToHide) - 1];
@@ -35,7 +46,10 @@ namespace ClientPlugin.Patches
             MyGuiControlCombobox modeSelector = new MyGuiControlCombobox(searchBox.Position + new Vector2(0f, 0.05f), searchBox.Size, originAlign: MyGuiDrawAlignEnum.HORISONTAL_LEFT_AND_VERTICAL_TOP, isAutoscaleEnabled: true);
             modeSelector.Name = "ModeSelector";
             page.Controls.Add(modeSelector);
+        }
 
+        private static void AddRenameGroupButton(MyGuiScreenTerminal __instance)
+        {
             var saveGroup = __instance.m_groupSave;
             var deleteGroup = __instance.m_groupDelete;
             var groupButtonAreaWidth = __instance.m_groupName.Size.X;
@@ -58,6 +72,9 @@ namespace ClientPlugin.Patches
         [HarmonyPatch(nameof(MyGuiScreenTerminal.AttachGroups))]
         public static void AttachGroupsPostfix(MyGuiControls parent)
         {
+            if (!Config.Current.EnableBlockFilter)
+                return;
+            
             parent.Add(ControlPanelLogic.RenameGroupButton);
         }
 
@@ -65,6 +82,9 @@ namespace ClientPlugin.Patches
         [HarmonyPatch(nameof(MyGuiScreenTerminal.DetachGroups))]
         public static void DetachGroupsPostfix(MyGuiControls parent)
         {
+            if (!Config.Current.EnableBlockFilter)
+                return;
+            
             parent.Remove(ControlPanelLogic.RenameGroupButton);
         }
     }

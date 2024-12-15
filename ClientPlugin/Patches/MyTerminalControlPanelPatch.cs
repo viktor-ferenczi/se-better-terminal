@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -18,6 +19,8 @@ using Sandbox.Graphics.GUI;
 namespace ClientPlugin.Patches
 {
     [HarmonyPatch(typeof(MyTerminalControlPanel))]
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
+    // ReSharper disable once UnusedType.Global
     public class MyTerminalControlPanelPatch
     {
         private static ControlPanelLogic logic;
@@ -35,6 +38,7 @@ namespace ClientPlugin.Patches
             if (logic != null)
                 logic.Close();
 
+            // Config conditions are inside the constructor
             logic = new ControlPanelLogic(__instance, controlsParent);
         }
 
@@ -42,8 +46,13 @@ namespace ClientPlugin.Patches
         [HarmonyPatch("Init")]
         private static void InitPostfix()
         {
-            logic.UpdateModeSelector();
-            logic.SelectNoneAndScrollBlockListToTop();
+            if (Config.Current.EnableBlockFilter)
+            {
+                logic.UpdateModeSelector();
+                logic.SelectNoneAndScrollBlockListToTop();
+            }
+
+            logic.SetSearchText(Config.Current.DefaultSearchText);
         }
 
         #region Groups
@@ -52,6 +61,9 @@ namespace ClientPlugin.Patches
         [HarmonyPatch("AddGroupToList")]
         private static void AddGroupToListPostfix(MyBlockGroup group)
         {
+            if (!Config.Current.EnableBlockFilter)
+                return;
+            
             logic.RegisterGroup(group);
         }
 
@@ -59,6 +71,9 @@ namespace ClientPlugin.Patches
         [HarmonyPatch("TerminalSystem_GroupRemoved")]
         private static void TerminalSystem_GroupRemovedPostfix(MyBlockGroup group)
         {
+            if (!Config.Current.EnableBlockFilter)
+                return;
+            
             logic.UnregisterGroup(group);
         }
 
@@ -66,6 +81,9 @@ namespace ClientPlugin.Patches
         [HarmonyPatch("groupDelete_ButtonClicked")]
         private static void groupDelete_ButtonClickedPostfix(MyGuiControlButton obj)
         {
+            if (!Config.Current.EnableBlockFilter)
+                return;
+            
             logic.UpdateModeSelector();
         }
 
@@ -73,6 +91,9 @@ namespace ClientPlugin.Patches
         [HarmonyPatch("groupSave_ButtonClicked")]
         private static void groupSave_ButtonClickedPostfix(MyGuiControlButton obj)
         {
+            if (!Config.Current.EnableBlockFilter)
+                return;
+            
             logic.UpdateModeSelector();
         }
 
@@ -80,6 +101,9 @@ namespace ClientPlugin.Patches
         [HarmonyPatch("SelectBlocks", new Type[0])]
         private static void SelectBlocksPostfix()
         {
+            if (!Config.Current.EnableBlockFilter)
+                return;
+            
             logic.AfterSelectBlocks();
         }
 
@@ -91,6 +115,9 @@ namespace ClientPlugin.Patches
         [HarmonyPatch("TerminalSystem_BlockAdded")]
         private static bool TerminalSystem_BlockAddedPrefix(MyTerminalBlock obj)
         {
+            if (!Config.Current.EnableBlockFilter)
+                return true;
+            
             logic.BlockAdded(obj);
             return false;
         }
@@ -99,6 +126,9 @@ namespace ClientPlugin.Patches
         [HarmonyPatch("TerminalSystem_BlockRemoved")]
         private static void TerminalSystem_BlockRemovedPostfix(MyTerminalBlock obj)
         {
+            if (!Config.Current.EnableBlockFilter)
+                return;
+            
             logic.UnregisterBlock(obj);
         }
 
@@ -106,6 +136,9 @@ namespace ClientPlugin.Patches
         [HarmonyPatch("ClearBlockList")]
         private static void ClearBlockListPostfix()
         {
+            if (!Config.Current.EnableBlockFilter)
+                return;
+            
             if (logic != null)
             {
                 logic.Close();
@@ -117,6 +150,9 @@ namespace ClientPlugin.Patches
         [HarmonyPatch("blockSearch_TextChanged")]
         private static bool blockSearch_TextChangedPrefix(string text)
         {
+            if (!Config.Current.EnableBlockFilter)
+                return true;
+            
             logic.blockSearch_TextChanged(text);
             return false;
         }
@@ -158,11 +194,13 @@ namespace ClientPlugin.Patches
 
         private static void PopulateBlockList_Top(MyTerminalControlPanel terminalControlPanel)
         {
+            // Config condition is inside
             CreateLogic(terminalControlPanel, terminalControlPanel.m_controlsParent);
         }
 
         private static void PopulateBlockList_AddBlocks(MyTerminalBlock[] blocks)
         {
+            // Config condition is inside
             logic.PopulateBlockList_AddBlocks(blocks);
         }
 
@@ -193,6 +231,7 @@ namespace ClientPlugin.Patches
 
         private static void UpdateItemAppearance_DefaultNameImplementation(MyTerminalBlock block, MyGuiControlListbox.Item item)
         {
+            // Config condition is inside
             logic.UpdateItemAppearance_DefaultNameImplementation(block, item);
         }
 
