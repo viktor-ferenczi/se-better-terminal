@@ -58,9 +58,7 @@ is identical to the default SE behavior except of fixing the
 bug with initial scroll position of the block list.
 
 The block filter is reset to default mode each time you open
-the Terminal UI to prevent confusion. You can also reset it
-without reopening the terminal by clicking on the **X** button
-to clear the search text, even if it is already empty.
+the Terminal UI to prevent confusion.
 
 ![Block filters](doc/BlockFilters.png "Block Filters")
 

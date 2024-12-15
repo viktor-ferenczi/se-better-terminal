@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 // General Information about an assembly is controlled through the following 
@@ -35,4 +36,4 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyFileVersion("1.0.0.0")]
 
 // Game assemblies to publicize
-//[assembly: IgnoresAccessChecksTo("Sandbox.Game")]
+[assembly: IgnoresAccessChecksTo("Sandbox.Game")]

@@ -9,8 +9,6 @@ using VRage.Game;
 using VRage.Utils;
 using VRageMath;
 
-[assembly: IgnoresAccessChecksTo("Sandbox.Game")]
-
 namespace ClientPlugin.Patches
 {
     // ReSharper disable once UnusedType.Global
@@ -19,7 +17,7 @@ namespace ClientPlugin.Patches
     public static class MyGuiScreenTerminalPatch
     {
         [HarmonyPostfix]
-        [HarmonyPatch("CreateControlPanelPageControls")]
+        [HarmonyPatch(nameof(MyGuiScreenTerminal.CreateControlPanelPageControls))]
         private static void CreateControlPanelPageControlsPostfix(MyGuiScreenTerminal __instance, MyGuiControlTabPage page)
         {
             if (Config.Current.EnableBlockFilter)
@@ -52,19 +50,24 @@ namespace ClientPlugin.Patches
         {
             var saveGroup = __instance.m_groupSave;
             var deleteGroup = __instance.m_groupDelete;
+            
             var groupButtonAreaWidth = __instance.m_groupName.Size.X;
             var groupButtonSpacing = 0.08f * saveGroup.Size.X;
             var groupButtonSize = new Vector2((groupButtonAreaWidth - 2f * groupButtonSpacing) / 3f, saveGroup.Size.Y);
             var groupButtonStep = new Vector2(groupButtonSize.X + groupButtonSpacing, 0f);
+            
             saveGroup.Size = groupButtonSize;
+            
             deleteGroup.Position = saveGroup.Position + 2f * groupButtonStep;
             deleteGroup.Size = groupButtonSize;
+            
             var renameGroupButton = new MyGuiControlButton(saveGroup.Position + groupButtonStep, MyGuiControlButtonStyleEnum.Rectangular, groupButtonSize, originAlign: MyGuiDrawAlignEnum.HORISONTAL_LEFT_AND_VERTICAL_CENTER);
             renameGroupButton.Name = "GroupRename";
             renameGroupButton.Text = "Rename";
             renameGroupButton.TextEnum = MyStringId.GetOrCompute("Rename");
             renameGroupButton.ShowTooltipWhenDisabled = true;
             renameGroupButton.SetToolTip(MyStringId.GetOrCompute("Select a block group to rename it"));
+            
             ControlPanelLogic.RenameGroupButton = renameGroupButton; // FIXME: Transfer of reference via global state
         }
 

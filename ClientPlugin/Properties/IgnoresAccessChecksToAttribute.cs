@@ -1,5 +1,7 @@
-// Define the class only while being built by Plugin Loader
-#if !BUILT_BY_MSBUILD
+// Define the IgnoresAccessChecksToAttribute class required to use publicized assemblies at runtime.
+// Define the class only if the project is built by Plugin Loader, because the Krafs.Publicizer
+// provides this already if the project is built directly in an IDE or by running msbuild.
+#if !DEV_BUILD
 
 namespace System.Runtime.CompilerServices
 {

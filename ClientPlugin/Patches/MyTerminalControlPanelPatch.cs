@@ -14,8 +14,6 @@ using Sandbox.Game.GameSystems;
 using Sandbox.Game.Gui;
 using Sandbox.Graphics.GUI;
 
-[assembly: IgnoresAccessChecksTo("Sandbox.Game")]
-
 namespace ClientPlugin.Patches
 {
     [HarmonyPatch(typeof(MyTerminalControlPanel))]
@@ -26,30 +24,21 @@ namespace ClientPlugin.Patches
         private static ControlPanelLogic logic;
 
         [HarmonyPrefix]
-        [HarmonyPatch("Init")]
+        [HarmonyPatch(nameof(MyTerminalControlPanel.Init))]
         private static bool InitPrefix(MyTerminalControlPanel __instance, IMyGuiControlsParent controlsParent)
         {
-            CreateLogic(__instance, controlsParent);
+            // Config conditions are inside the constructor
+            logic = new ControlPanelLogic(__instance, controlsParent);
             return true;
         }
 
-        private static void CreateLogic(MyTerminalControlPanel __instance, IMyGuiControlsParent controlsParent)
-        {
-            if (logic != null)
-                logic.Close();
-
-            // Config conditions are inside the constructor
-            logic = new ControlPanelLogic(__instance, controlsParent);
-        }
-
         [HarmonyPostfix]
-        [HarmonyPatch("Init")]
+        [HarmonyPatch(nameof(MyTerminalControlPanel.Init))]
         private static void InitPostfix()
         {
             if (Config.Current.EnableBlockFilter)
             {
-                logic.UpdateModeSelector();
-                logic.SelectNoneAndScrollBlockListToTop();
+                logic.ScrollBlockListToTop();
             }
 
             logic.SetSearchText(Config.Current.DefaultSearchText);
@@ -94,6 +83,7 @@ namespace ClientPlugin.Patches
             if (!Config.Current.EnableBlockFilter)
                 return;
             
+            logic.PrepareGroupRenaming();
             logic.UpdateModeSelector();
         }
 
@@ -112,7 +102,7 @@ namespace ClientPlugin.Patches
         #region Blocks
 
         [HarmonyPrefix]
-        [HarmonyPatch("TerminalSystem_BlockAdded")]
+        [HarmonyPatch(nameof(MyTerminalControlPanel.TerminalSystem_BlockAdded))]
         private static bool TerminalSystem_BlockAddedPrefix(MyTerminalBlock obj)
         {
             if (!Config.Current.EnableBlockFilter)
@@ -123,7 +113,7 @@ namespace ClientPlugin.Patches
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch("TerminalSystem_BlockRemoved")]
+        [HarmonyPatch(nameof(MyTerminalControlPanel.TerminalSystem_BlockRemoved))]
         private static void TerminalSystem_BlockRemovedPostfix(MyTerminalBlock obj)
         {
             if (!Config.Current.EnableBlockFilter)
@@ -132,22 +122,20 @@ namespace ClientPlugin.Patches
             logic.UnregisterBlock(obj);
         }
 
-        [HarmonyPostfix]
-        [HarmonyPatch("ClearBlockList")]
-        private static void ClearBlockListPostfix()
+        [HarmonyPrefix]
+        [HarmonyPatch(nameof(MyTerminalControlPanel.Close))]
+        private static bool ClosePrefix()
         {
-            if (!Config.Current.EnableBlockFilter)
-                return;
-            
-            if (logic != null)
+            if (!Config.Current.EnableBlockFilter && logic != null)
             {
                 logic.Close();
                 logic = null;
             }
+            return true;
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch("blockSearch_TextChanged")]
+        [HarmonyPatch(nameof(MyTerminalControlPanel.blockSearch_TextChanged))]
         private static bool blockSearch_TextChangedPrefix(string text)
         {
             if (!Config.Current.EnableBlockFilter)
@@ -158,7 +146,7 @@ namespace ClientPlugin.Patches
         }
 
         [HarmonyTranspiler]
-        [HarmonyPatch("PopulateBlockList")]
+        [HarmonyPatch(nameof(MyTerminalControlPanel.PopulateBlockList))]
         private static IEnumerable<CodeInstruction> PopulateBlockListTranspiler(IEnumerable<CodeInstruction> code)
         {
             var il = code.ToList();
@@ -182,30 +170,21 @@ namespace ClientPlugin.Patches
             var methodInfo = AccessTools.DeclaredMethod(typeof(MyTerminalControlPanelPatch), nameof(PopulateBlockList_AddBlocks));
             il.Insert(i, new CodeInstruction(OpCodes.Call, methodInfo));
 
-            // Initialize logic at the top
-            var reinitMethod = AccessTools.DeclaredMethod(typeof(MyTerminalControlPanelPatch), nameof(PopulateBlockList_Top));
-            i = 0;
-            il.Insert(i++, new CodeInstruction(OpCodes.Ldarg_0));
-            il.Insert(i, new CodeInstruction(OpCodes.Call, reinitMethod));
-
             il.RecordPatchedCode();
             return il;
-        }
-
-        private static void PopulateBlockList_Top(MyTerminalControlPanel terminalControlPanel)
-        {
-            // Config condition is inside
-            CreateLogic(terminalControlPanel, terminalControlPanel.m_controlsParent);
         }
 
         private static void PopulateBlockList_AddBlocks(MyTerminalBlock[] blocks)
         {
             // Config condition is inside
             logic.PopulateBlockList_AddBlocks(blocks);
+            
+            // Must update the mode selector, but it should keep its current selection
+            logic.UpdateModeSelector();
         }
 
         [HarmonyTranspiler]
-        [HarmonyPatch("UpdateItemAppearance")]
+        [HarmonyPatch(nameof(MyTerminalControlPanel.UpdateItemAppearance))]
         private static IEnumerable<CodeInstruction> UpdateItemAppearanceTranspiler(IEnumerable<CodeInstruction> code)
         {
             var il = code.ToList();
