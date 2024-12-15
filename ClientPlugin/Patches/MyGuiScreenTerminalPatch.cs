@@ -74,7 +74,7 @@ namespace ClientPlugin.Patches
         {
             if (!Config.Current.EnableBlockFilter)
                 return;
-            
+
             parent.Add(ControlPanelLogic.RenameGroupButton);
         }
 
@@ -84,7 +84,7 @@ namespace ClientPlugin.Patches
         {
             if (!Config.Current.EnableBlockFilter)
                 return;
-            
+
             parent.Remove(ControlPanelLogic.RenameGroupButton);
         }
     }

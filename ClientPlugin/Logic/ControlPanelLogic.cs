@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Entities.Cube;
@@ -50,7 +49,7 @@ namespace ClientPlugin.Logic
 
             if (Config.Current.EnableBlockFilter)
                 PrepareModeSelector(controlsParent);
-            
+
             if (Config.Current.EnableGroupRenaming)
                 PrepareGroupRenaming(controlPanel);
         }
@@ -108,7 +107,7 @@ namespace ClientPlugin.Logic
             {
                 if (showDefaultNamesCheckbox != null)
                     showDefaultNamesCheckbox.IsCheckedChanged -= showDefaultNames_Clicked;
-                
+
                 if (modeSelectorCombobox != null)
                     modeSelectorCombobox.SelectedItemChanged -= m_modeSelector_SelectedItemChanged;
             }
@@ -247,7 +246,7 @@ namespace ClientPlugin.Logic
             {
                 pattern = null;
             }
-            
+
             var defaultMode = false;
             var showHiddenBlocks = MyTerminalControlPanel.m_showAllTerminalBlocks;
 
@@ -323,7 +322,7 @@ namespace ClientPlugin.Logic
             {
                 if (!item.Visible)
                     continue;
-                
+
                 if (item == firstSelectedVisibleItem)
                 {
                     firstSelectedVisibleItemPosition = visibleItemPosition;
@@ -332,7 +331,7 @@ namespace ClientPlugin.Logic
 
                 visibleItemPosition++;
             }
-            
+
             if (firstSelectedVisibleItemPosition >= 0)
                 blockListbox.SetScrollPosition(firstSelectedVisibleItemPosition);
             else
@@ -467,9 +466,10 @@ namespace ClientPlugin.Logic
                 {
                     controlPanel.AddBlockToList(terminalBlock);
                 }
+
                 return;
             }
-            
+
             var modeSelectorData = ModeSelectorData;
             var originalBlock = controlPanel.m_originalBlock;
             var showAllTerminalBlocks = MyTerminalControlPanel.m_showAllTerminalBlocks;

@@ -19,7 +19,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG</DefineConstants>
+    <DefineConstants>BUILT_BY_MSBUILD;DEBUG</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -29,7 +29,7 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants></DefineConstants>
+    <DefineConstants>BUILT_BY_MSBUILD</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -502,6 +502,7 @@
     <Compile Include="Patches\MyTerminalControlPanelPatch.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\IgnoresAccessChecksToAttribute.cs" />
     <Compile Include="Settings\Elements\Button.cs" />
     <Compile Include="Settings\Elements\Checkbox.cs" />
     <Compile Include="Settings\Elements\Dropdown.cs" />
@@ -524,7 +525,6 @@
     <Content Include="Patches\MyTerminalControlPanelPatch.PopulateBlockListTranspiler.Net4.patched.il" />
     <Content Include="Patches\MyTerminalControlPanelPatch.UpdateItemAppearanceTranspiler.Net4.original.il" />
     <Content Include="Patches\MyTerminalControlPanelPatch.UpdateItemAppearanceTranspiler.Net4.patched.il" />
-    <Content Include="PluginHub.xml" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -541,32 +541,11 @@
     <PostBuildEvent>call "$(ProjectDir)\deploy.bat" "$(TargetPath)" "$(SolutionName)"</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
-    <PublicizerLogFilePath>C:\\Temp\\Krafs.Publicizer.log</PublicizerLogFilePath>
-    <PublicizerRuntimeStrategies>Unsafe;IgnoresAccessChecksTo</PublicizerRuntimeStrategies>
     <PublicizerClearCacheOnClean>true</PublicizerClearCacheOnClean>
+    <PublicizerRuntimeStrategies>Unsafe;IgnoresAccessChecksTo</PublicizerRuntimeStrategies>
+    <PublicizerLogFilePath>$(TargetDir)/Krafs.Publicizer.log</PublicizerLogFilePath>
   </PropertyGroup>
   <ItemGroup>
-    <Publicize Include="Sandbox.Game:Sandbox.Game.Gui.MyTerminalControlPanel" />
-    <Publicize Include="Sandbox.Game:Sandbox.Game.Gui.MyTerminalControlPanel.m_groupName" />
-    <Publicize Include="Sandbox.Game:Sandbox.Game.Gui.MyTerminalControlPanel.m_groupDelete" />
-    <Publicize Include="Sandbox.Game:Sandbox.Game.Gui.MyTerminalControlPanel.m_searchBox" />
-    <Publicize Include="Sandbox.Game:Sandbox.Game.Gui.MyTerminalControlPanel.m_originalBlock" />
-    <Publicize Include="Sandbox.Game:Sandbox.Game.Gui.MyTerminalControlPanel.m_controlsParent" />
-    <Publicize Include="Sandbox.Game:Sandbox.Game.Gui.MyTerminalControlPanel.m_showAllTerminalBlocks" />
-    <Publicize Include="Sandbox.Game:Sandbox.Game.Gui.MyTerminalControlPanel.m_currentGroups" />
-    <Publicize Include="Sandbox.Game:Sandbox.Game.Gui.MyTerminalControlPanel.blockSearch_TextChanged" />
-    <Publicize Include="Sandbox.Game:Sandbox.Game.Gui.MyTerminalControlPanel.showAll_Clicked" />
-    <Publicize Include="Sandbox.Game:Sandbox.Game.Gui.MyTerminalControlPanel.UpdateItemAppearance" />
-    <Publicize Include="Sandbox.Game:Sandbox.Game.Gui.MyTerminalControlPanel.AddBlockToList" />
-    <Publicize Include="Sandbox.Game:Sandbox.Game.Gui.MyTerminalControlPanel.groupSave_ButtonClicked" />
-    <Publicize Include="Sandbox.Game:Sandbox.Game.Gui.MyTerminalControlPanel.groupDelete_ButtonClicked" />
-    <Publicize Include="Sandbox.Game:Sandbox.Game.Gui.MyGuiScreenTerminal.m_groupName" />
-    <Publicize Include="Sandbox.Game:Sandbox.Game.Gui.MyGuiScreenTerminal.m_groupSave" />
-    <Publicize Include="Sandbox.Game:Sandbox.Game.Gui.MyGuiScreenTerminal.m_groupDelete" />
-    <Publicize Include="Sandbox.Game:Sandbox.Game.GameSystems.MyBlockGroup.Blocks" />
-    <Publicize Include="Sandbox.Game:Sandbox.Game.Screens.Helpers.MyTerminalComparer" />
-    <Publicize Include="Sandbox.Game:Sandbox.Game.Screens.Helpers.MyTerminalComparer.Static" />
-    <Publicize Include="Sandbox.Game:Sandbox.Game.Entities.MyThrust.GetDirectionString" />
-    <Publicize Include="Sandbox.Game:Sandbox.Game.Entities.Cube.MyTerminalBlock.m_defaultCustomName" />
+    <Publicize Include="Sandbox.Game" IncludeCompilerGeneratedMembers="false" />
   </ItemGroup>  
 </Project>
