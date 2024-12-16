@@ -20,6 +20,50 @@ Please consider supporting my work on [Patreon](https://www.patreon.com/semods) 
 3. In the new **Plugins** menu add the "Better Terminal" plugin
 4. Apply and restart the game as requested
 
+## Features
+
+### Control Panel
+
+#### Renaming groups
+
+There is a new **Rename button** under the group name. 
+
+Select the group to rename, edit the name in the group name text box, then click Rename.
+Any block toolbars referencing the group will be updated automatically, 
+so there will be no broken slots.
+
+![Block group renaming](doc/BlockRenaming.png "Rename Group")
+
+#### Block filter
+
+There is a **dropdown list** below the block search field.
+You can filter the block list for various **common situations**,
+by **block group** and by **block type**. 
+
+The default filter mode is identical to the default SE behavior
+except of fixing the bug with initial scroll position of the block list.
+
+_The block filter is reset to default mode each time you open
+the Terminal UI to prevent confusion._
+
+![Block filters](doc/BlockFilters.png "Block Filters")
+
+#### Default block names
+
+There is a **checkbox** right next to the block filter dropdown.
+
+It **toggles showing the default block names** instead of the player defined custom ones.
+This is really useful to find blocks by their type, regardless of how they were renamed.
+
+Enabling this feature will **not** rename your blocks back to their default name.
+All it does is changing the list to show the default names until it is enabled.
+You can still see the custom block names in the tooltips as you hover over the
+blocks in the list.
+
+_The default name checkbox is cleared each time you open the Terminal UI to prevent confusion._
+
+![Show/hide default block names](doc/DefaultBlockNames.png "Show/Hide Default Block Names")
+
 ## Configuration
 
 Press `Ctrl-Alt-/` while in-game and not in the GUI. It will open the list of
@@ -36,41 +80,6 @@ transpiler patches are always loaded, but they provided the same functionality a
 the original game if it is disabled.
 
 ![Configuration](doc/ConfigDialog.png "Config Dialog")
-
-## Features
-
-### Control Panel
-
-#### Rename group
-
-There is a new **Rename** button under the group name. Select the group to rename,
-edit the name in the group name text box, then click Rename. Any block toolbars
-referencing the group will be updated automatically, so there will be no broken slots.
-
-![Block group renaming](doc/BlockRenaming.png "Rename Group")
-
-#### Block filter
-
-There is a new dropdown below the block search field. 
-You can filter the block list for various common situations,
-by any named group or by block type. The default filter mode
-is identical to the default SE behavior except of fixing the
-bug with initial scroll position of the block list.
-
-The block filter is reset to default mode each time you open
-the Terminal UI to prevent confusion.
-
-![Block filters](doc/BlockFilters.png "Block Filters")
-
-#### Default block names
-
-There is a new checkbox right next to the block filter dropdown.
-It toggles showing the default block names instead of the player defined ones.
-This is really useful to find blocks by their type, regardless of how they were renamed.
-
-The default name checkbox is cleared each time you open the Terminal UI to prevent confusion.
-
-![Show/hide default block names](doc/DefaultBlockNames.png "Show/Hide Default Block Names")
 
 ## Troubleshooting
 
