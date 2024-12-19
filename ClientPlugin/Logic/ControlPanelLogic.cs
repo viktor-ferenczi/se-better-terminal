@@ -681,6 +681,9 @@ namespace ClientPlugin.Logic
 
         public void SetSearchText(string searchText)
         {
+            if (controlPanel.m_searchBox == null)
+                return;
+            
             if (searchText == null || controlPanel.m_searchBox.SearchText == searchText)
                 return;
 
