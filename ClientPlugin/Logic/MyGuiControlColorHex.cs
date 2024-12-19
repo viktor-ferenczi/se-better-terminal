@@ -1,6 +1,7 @@
 using System;
 using ClientPlugin.Tools;
 using Sandbox.Graphics.GUI;
+using VRage;
 using VRage.Utils;
 using VRageMath;
 
@@ -8,18 +9,23 @@ namespace ClientPlugin.Logic
 {
     public class MyGuiControlColorHex : MyGuiControlColor
     {
-        public Color Color { get; private set; }
-        public Color GetColor() => Color;
+        private new Color m_color;
+        private Color color
+        {
+            get => m_color;
+            set => base.m_color = m_color = value;
+        }
+
         public new void SetColor(Vector3 color) => SetColor(new Color(color));
         public new void SetColor(Vector4 color) => SetColor(new Color(color));
 
         private new void SetColor(Color newColor)
         {
-            Color = newColor;
-            hexTextbox.Text = Color.ToHexStringRgb();
+            color = newColor;
+            hexTextbox.Text = color.ToHexStringRgb();
         }
 
-        public new event Action<MyGuiControlColorHex> OnChange;
+        public event Action<MyGuiControlColor> MyGuiControlColorHex_OnChange;
 
         private readonly MyGuiControlLabel label;
         private readonly MyGuiControlTextbox hexTextbox;
@@ -39,6 +45,7 @@ namespace ClientPlugin.Logic
             float maxTitleWidth = 1)
             : base(null, textScale, position, color, defaultColor, dialogAmountCaption, placeSlidersVertically, font, isAutoscaleEnabled, isAutoEllipsisEnabled, maxTitleWidth)
         {
+            this.color = color;
             label = new MyGuiControlLabel(Vector2.Zero, Vector2.Zero, text, ColorMask, 0.8f * textScale, font, MyGuiDrawAlignEnum.HORISONTAL_LEFT_AND_VERTICAL_TOP, isAutoEllipsisEnabled, maxTitleWidth, isAutoscaleEnabled);
             hexTextbox = new MyGuiControlTextbox(defaultText: color.ToHexStringRgb(), maxLength: 6)
             {
@@ -49,14 +56,15 @@ namespace ClientPlugin.Logic
 
         private void OnTextChanged(MyGuiControlTextbox obj)
         {
-            if (hexTextbox.Text.TryParseColorFromHexRgb(out var newColor) && newColor != Color)
+            if (hexTextbox.Text.TryParseColorFromHexRgb(out var newColor) && newColor != color)
             {
                 hexTextbox.Text = newColor.ToHexStringRgb();
-                Color = newColor;
+                color = newColor;
+                MyGuiControlColorHex_OnChange?.Invoke(this);
             }
         }
 
-        protected override void OnSizeChanged()
+        public override void OnSizeChanged()
         {
             base.OnSizeChanged();
             LayoutControls();

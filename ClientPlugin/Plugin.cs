@@ -21,7 +21,10 @@ namespace ClientPlugin
             Instance = this;
             Instance.settingsGenerator = new SettingsGenerator();
 
-            // TODO: Put your one time initialization code here.
+#if DEBUG
+            Harmony.DEBUG = true;            
+#endif
+            
             Harmony harmony = new Harmony(Name);
             harmony.PatchAll(Assembly.GetExecutingAssembly());
         }

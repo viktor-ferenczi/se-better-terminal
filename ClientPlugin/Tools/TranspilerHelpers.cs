@@ -212,40 +212,81 @@ namespace ClientPlugin.Tools
             return il.Select(ci => ci.DeepClone()).ToList();
         }
 
-        public static IEnumerable<CodeInstruction> ReplaceType(this IEnumerable<CodeInstruction> il, Type originalType, Type replacementType)
+        public static IEnumerable<CodeInstruction> ReplaceType(this IEnumerable<CodeInstruction> il, Type originalType, Type replacementType, Dictionary<string, string> nameReplacements = null)
         {
             foreach (var ci in il)
             {
                 switch (ci.operand)
                 {
-                    case Type type when type.FullName == originalType.FullName:
+                    case Type type when type == originalType:
                         yield return new CodeInstruction(ci.opcode, replacementType).WithBlocks(ci.blocks).WithLabels(ci.labels);
                         break;
 
-                    case MethodInfo mi when mi.DeclaringType?.FullName == originalType.FullName && !mi.IsAbstract:
+                    case Type type when type.GenericTypeArguments.Contains(originalType):
+                        var modifiedType = ReplaceGenericTypeArgument(type, originalType, replacementType);
+                        yield return new CodeInstruction(ci.opcode, modifiedType).WithBlocks(ci.blocks).WithLabels(ci.labels);
+                        break;
+
+                    case ConstructorInfo info when info.DeclaringType == originalType && !info.IsAbstract:
+                        var constructor = AccessTools.DeclaredConstructor(
+                            replacementType,
+                            info.GetParameters().Select(p => p.ParameterType).ToArray());
+                        if (constructor == null)
+                            throw new Exception($"Failed to get ConstructorInfo: {replacementType?.FullName}");
+                        yield return new CodeInstruction(ci.opcode, constructor).WithBlocks(ci.blocks).WithLabels(ci.labels);
+                        break;
+
+                    case MethodInfo info when info.DeclaringType == originalType && !info.IsAbstract:
                         var method = AccessTools.DeclaredMethod(
                             replacementType,
-                            mi.Name,
-                            mi.GetParameters().Select(p => p.ParameterType).ToArray(),
-                            mi.IsGenericMethod ? mi.GetGenericArguments() : null);
+                            nameReplacements == null ? info.Name : nameReplacements.GetValueOrDefault(info.Name, info.Name),
+                            info.GetParameters().Select(p => p.ParameterType).ToArray(),
+                            info.IsGenericMethod ? info.GetGenericArguments() : null);
+                        if (method == null)
+                            throw new Exception($"Failed to get MethodInfo: {replacementType?.FullName}::{info.Name}");
                         yield return new CodeInstruction(ci.opcode, method).WithBlocks(ci.blocks).WithLabels(ci.labels);
+                        // if (info.ReturnType? == originalType)
+                        //     yield return new CodeInstruction(OpCodes.Castclass, replacementType);
                         break;
 
-                    case PropertyInfo pi:
-                        var property = AccessTools.DeclaredProperty(replacementType, pi.Name);
-                        yield return new CodeInstruction(ci.opcode, property).WithBlocks(ci.blocks).WithLabels(ci.labels);
+                    case FieldInfo info when info.FieldType == originalType && ci.opcode == OpCodes.Ldfld:
+                        yield return ci;
+                        yield return new CodeInstruction(OpCodes.Castclass, replacementType);
                         break;
 
-                    case FieldInfo fi:
-                        var field = AccessTools.DeclaredProperty(replacementType, fi.Name);
-                        yield return new CodeInstruction(ci.opcode, field).WithBlocks(ci.blocks).WithLabels(ci.labels);
-                        break;
+                    // case PropertyInfo info when info.PropertyType == originalType:
+                    //     var property = AccessTools.DeclaredProperty(
+                    //         replacementType, 
+                    //         nameReplacements == null ? info.Name : nameReplacements.GetValueOrDefault(info.Name, info.Name));
+                    //     if (property == null)
+                    //         throw new Exception($"Failed to get PropertyInfo: {info.PropertyType.FullName}::{info.Name}");
+                    //     yield return new CodeInstruction(ci.opcode, property).WithBlocks(ci.blocks).WithLabels(ci.labels);
+                    //     break;
 
                     default:
                         yield return ci;
                         break;
                 }
             }
+        }
+
+        public static Type ReplaceGenericTypeArgument(Type type, Type originalType, Type replacementType)
+        {
+            if (!type.IsGenericType)
+                throw new InvalidOperationException("Type is not generic.");
+
+            var genericTypeDefinition = type.GetGenericTypeDefinition();
+            var genericArguments = type.GenericTypeArguments;
+
+            for (var i = 0; i < genericArguments.Length; i++)
+            {
+                if (genericArguments[i] == originalType)
+                {
+                    genericArguments[i] = replacementType;
+                }
+            }
+
+            return genericTypeDefinition.MakeGenericType(genericArguments);
         }
     }
 

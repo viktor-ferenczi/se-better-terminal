@@ -21,7 +21,14 @@ namespace ClientPlugin.Patches
             var il = code.ToList();
             il.RecordOriginalCode();
 
-            il = il.ReplaceType(typeof(MyGuiControlColor), typeof(MyGuiControlColorHex)).ToList();
+            il = il.ReplaceType(
+                typeof(MyGuiControlColor), 
+                typeof(MyGuiControlColorHex),
+                new Dictionary<string, string>
+                {
+                    {"add_OnChange", "add_MyGuiControlColorHex_OnChange"},
+                }
+                ).ToList();
 
             il.RecordPatchedCode();
             return il;

@@ -554,5 +554,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Publicize Include="Sandbox.Game" IncludeCompilerGeneratedMembers="false" />
+    <Publicize Include="Sandbox.Graphics" IncludeCompilerGeneratedMembers="false" />
   </ItemGroup>  
 </Project>
