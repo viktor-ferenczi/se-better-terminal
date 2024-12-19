@@ -17,8 +17,8 @@ namespace ClientPlugin.Tools
     // https://github.com/viktor-ferenczi/performance-improvements
     public static class TranspilerHelpers
     {
-        private static readonly int DotNetMajorVersion = Environment.Version.Major; 
-        
+        private static readonly int DotNetMajorVersion = Environment.Version.Major;
+
         public delegate bool OpcodePredicate(OpCode opcode);
 
         public delegate bool CodeInstructionPredicate(CodeInstruction ci);
@@ -41,7 +41,7 @@ namespace ClientPlugin.Tools
             if (ci == null)
                 throw new CodeInstructionNotFound("No code instruction found loading or storing a field matching the given predicate");
 
-            return (FieldInfo) ci.operand;
+            return (FieldInfo)ci.operand;
         }
 
         public static MethodInfo FindPropertyGetter(this List<CodeInstruction> il, string name)
@@ -50,7 +50,7 @@ namespace ClientPlugin.Tools
             if (ci == null)
                 throw new CodeInstructionNotFound("No code instruction found getting or setting a property matching the given predicate");
 
-            return (MethodInfo) ci.operand;
+            return (MethodInfo)ci.operand;
         }
 
         public static MethodInfo FindPropertySetter(this List<CodeInstruction> il, string name)
@@ -59,7 +59,7 @@ namespace ClientPlugin.Tools
             if (ci == null)
                 throw new CodeInstructionNotFound("No code instruction found getting or setting a property matching the given predicate");
 
-            return (MethodInfo) ci.operand;
+            return (MethodInfo)ci.operand;
         }
 
         public static Label GetLabel(this List<CodeInstruction> il, OpcodePredicate predicate)
@@ -68,7 +68,7 @@ namespace ClientPlugin.Tools
             if (ci == null)
                 throw new CodeInstructionNotFound("No label found matching the opcode predicate");
 
-            return (Label) ci.operand;
+            return (Label)ci.operand;
         }
 
         public static void RemoveFieldInitialization(this List<CodeInstruction> il, string name)
@@ -193,7 +193,7 @@ namespace ClientPlugin.Tools
             {
                 callerFileName = callerFileName.Substring(0, callerFileName.Length - 3);
             }
-            
+
             var path = Path.Combine(dir, $"{callerFileName}.{callerMemberName}.Net{DotNetMajorVersion}.{suffix}.il");
 
             File.WriteAllText(path, text);
@@ -210,6 +210,42 @@ namespace ClientPlugin.Tools
         public static List<CodeInstruction> DeepClone(this IEnumerable<CodeInstruction> il)
         {
             return il.Select(ci => ci.DeepClone()).ToList();
+        }
+
+        public static IEnumerable<CodeInstruction> ReplaceType(this IEnumerable<CodeInstruction> il, Type originalType, Type replacementType)
+        {
+            foreach (var ci in il)
+            {
+                switch (ci.operand)
+                {
+                    case Type type when type.FullName == originalType.FullName:
+                        yield return new CodeInstruction(ci.opcode, replacementType).WithBlocks(ci.blocks).WithLabels(ci.labels);
+                        break;
+
+                    case MethodInfo mi when mi.DeclaringType?.FullName == originalType.FullName && !mi.IsAbstract:
+                        var method = AccessTools.DeclaredMethod(
+                            replacementType,
+                            mi.Name,
+                            mi.GetParameters().Select(p => p.ParameterType).ToArray(),
+                            mi.IsGenericMethod ? mi.GetGenericArguments() : null);
+                        yield return new CodeInstruction(ci.opcode, method).WithBlocks(ci.blocks).WithLabels(ci.labels);
+                        break;
+
+                    case PropertyInfo pi:
+                        var property = AccessTools.DeclaredProperty(replacementType, pi.Name);
+                        yield return new CodeInstruction(ci.opcode, property).WithBlocks(ci.blocks).WithLabels(ci.labels);
+                        break;
+
+                    case FieldInfo fi:
+                        var field = AccessTools.DeclaredProperty(replacementType, fi.Name);
+                        yield return new CodeInstruction(ci.opcode, field).WithBlocks(ci.blocks).WithLabels(ci.labels);
+                        break;
+
+                    default:
+                        yield return ci;
+                        break;
+                }
+            }
         }
     }
 

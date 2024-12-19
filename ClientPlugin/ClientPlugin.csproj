@@ -497,8 +497,11 @@
   <ItemGroup>
     <Compile Include="Config.cs" />
     <Compile Include="Extensions\MyCubeBlockExtensions.cs" />
+    <Compile Include="Logic\MyGuiControlColorHex.cs" />
     <Compile Include="Logic\ControlPanelLogic.cs" />
+    <Compile Include="Patches\MyGuiControlColorPatch.cs" />
     <Compile Include="Patches\MyGuiScreenTerminalPatch.cs" />
+    <Compile Include="Patches\MyTerminalControlColorPatch.cs" />
     <Compile Include="Patches\MyTerminalControlPanelPatch.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -518,10 +521,13 @@
     <Compile Include="Settings\SettingsScreen.cs" />
     <Compile Include="Settings\ConfigStorage.cs" />
     <Compile Include="Tools\Hashing.cs" />
+    <Compile Include="Tools\Tools.cs" />
     <Compile Include="Tools\TranspilerHelpers.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="deploy.bat" />
+    <Content Include="Patches\MyTerminalControlColorPatch.CreateGuiTranspiler.Net4.original.il" />
+    <Content Include="Patches\MyTerminalControlColorPatch.CreateGuiTranspiler.Net4.patched.il" />
     <Content Include="Patches\MyTerminalControlPanelPatch.PopulateBlockListTranspiler.Net4.original.il" />
     <Content Include="Patches\MyTerminalControlPanelPatch.PopulateBlockListTranspiler.Net4.patched.il" />
     <Content Include="Patches\MyTerminalControlPanelPatch.UpdateItemAppearanceTranspiler.Net4.original.il" />
