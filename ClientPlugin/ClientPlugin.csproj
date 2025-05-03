@@ -496,7 +496,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Config.cs" />
+    <Compile Include="Extensions\MyBlockGroupExtensions.cs" />
     <Compile Include="Extensions\MyCubeBlockExtensions.cs" />
+    <Compile Include="Extensions\MyGuiScreenTerminalAccessors.cs" />
+    <Compile Include="Extensions\MyTerminalBlockExtensions.cs" />
+    <Compile Include="Extensions\MyTerminalComparer.cs" />
+    <Compile Include="Extensions\MyTerminalControlPanelWrapper.cs" />
+    <Compile Include="Extensions\MyThrustExtensions.cs" />
     <Compile Include="Logic\ControlPanelLogic.cs" />
     <Compile Include="Patches\MyGuiScreenTerminalPatch.cs" />
     <Compile Include="Patches\MyTerminalControlPanelPatch.cs" />
@@ -531,22 +537,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Krafs.Publicizer" Version="2.3.0">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
     <PackageReference Include="Lib.Harmony" Version="2.3.3" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>call "$(ProjectDir)\deploy.bat" "$(TargetPath)" "$(SolutionName)"</PostBuildEvent>
   </PropertyGroup>
-  <PropertyGroup>
-    <PublicizerClearCacheOnClean>true</PublicizerClearCacheOnClean>
-    <PublicizerRuntimeStrategies>Unsafe;IgnoresAccessChecksTo</PublicizerRuntimeStrategies>
-    <PublicizerLogFilePath>$(TargetDir)/Krafs.Publicizer.log</PublicizerLogFilePath>
-  </PropertyGroup>
-  <ItemGroup>
-    <Publicize Include="Sandbox.Game" IncludeCompilerGeneratedMembers="false" />
-  </ItemGroup>  
 </Project>

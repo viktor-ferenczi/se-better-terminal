@@ -1,5 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
+using ClientPlugin.Extensions;
 using ClientPlugin.Logic;
 using HarmonyLib;
 using Sandbox.Game.Gui;
@@ -17,7 +17,8 @@ namespace ClientPlugin.Patches
     public static class MyGuiScreenTerminalPatch
     {
         [HarmonyPostfix]
-        [HarmonyPatch(nameof(MyGuiScreenTerminal.CreateControlPanelPageControls))]
+        [HarmonyPatch("CreateControlPanelPageControls")]
+        // ReSharper disable once InconsistentNaming
         private static void CreateControlPanelPageControlsPostfix(MyGuiScreenTerminal __instance, MyGuiControlTabPage page)
         {
             if (Config.Current.EnableBlockFilter)
@@ -46,12 +47,13 @@ namespace ClientPlugin.Patches
             page.Controls.Add(modeSelector);
         }
 
+        // ReSharper disable once InconsistentNaming
         private static void AddRenameGroupButton(MyGuiScreenTerminal __instance)
         {
-            var saveGroup = __instance.m_groupSave;
-            var deleteGroup = __instance.m_groupDelete;
-            
-            var groupButtonAreaWidth = __instance.m_groupName.Size.X;
+            var saveGroup = __instance.GetGroupSave();
+            var deleteGroup = __instance.GetGroupDelete();
+
+            var groupButtonAreaWidth = __instance.GetGroupName().Size.X;
             var groupButtonSpacing = 0.08f * saveGroup.Size.X;
             var groupButtonSize = new Vector2((groupButtonAreaWidth - 2f * groupButtonSpacing) / 3f, saveGroup.Size.Y);
             var groupButtonStep = new Vector2(groupButtonSize.X + groupButtonSpacing, 0f);
@@ -73,6 +75,7 @@ namespace ClientPlugin.Patches
 
         [HarmonyPostfix]
         [HarmonyPatch(nameof(MyGuiScreenTerminal.AttachGroups))]
+        // ReSharper disable once UnusedMember.Global
         public static void AttachGroupsPostfix(MyGuiControls parent)
         {
             if (!Config.Current.EnableBlockFilter)
@@ -83,6 +86,7 @@ namespace ClientPlugin.Patches
 
         [HarmonyPostfix]
         [HarmonyPatch(nameof(MyGuiScreenTerminal.DetachGroups))]
+        // ReSharper disable once UnusedMember.Global
         public static void DetachGroupsPostfix(MyGuiControls parent)
         {
             if (!Config.Current.EnableBlockFilter)

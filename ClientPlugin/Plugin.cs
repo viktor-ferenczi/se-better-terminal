@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using ClientPlugin.Patches;
 using ClientPlugin.Settings;
 using ClientPlugin.Settings.Layouts;
 using HarmonyLib;
@@ -24,6 +25,7 @@ namespace ClientPlugin
             // TODO: Put your one time initialization code here.
             Harmony harmony = new Harmony(Name);
             harmony.PatchAll(Assembly.GetExecutingAssembly());
+            MyTerminalControlPanelPatch.Apply(harmony);
         }
 
         public void Dispose()

@@ -5,35 +5,107 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Runtime.CompilerServices;
+using ClientPlugin.Extensions;
 using ClientPlugin.Logic;
 using ClientPlugin.Tools;
 using HarmonyLib;
 using Sandbox.Game.Entities.Cube;
 using Sandbox.Game.GameSystems;
-using Sandbox.Game.Gui;
 using Sandbox.Graphics.GUI;
 
 namespace ClientPlugin.Patches
 {
-    [HarmonyPatch(typeof(MyTerminalControlPanel))]
+    // This does not work: [HarmonyPatch("Sandbox.Game.Gui.MyTerminalControlPanel")]
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     // ReSharper disable once UnusedType.Global
-    public class MyTerminalControlPanelPatch
+    public static class MyTerminalControlPanelPatch
     {
+        // HarmonyLib does not look for a TargetType method either to return the type to patch.
+        // So we have to call this ugly manual patch application from the mod's init:
+        public static void Apply(Harmony harmony)
+        {
+            var type = AccessTools.TypeByName("Sandbox.Game.Gui.MyTerminalControlPanel");
+            if (type == null) throw new Exception("Target type not found");
+
+            var patchClass = typeof(MyTerminalControlPanelPatch);
+
+            harmony.Patch(
+                AccessTools.Method(type, "Init"),
+                prefix: new HarmonyMethod(patchClass, nameof(InitPrefix)),
+                postfix: new HarmonyMethod(patchClass, nameof(InitPostfix))
+            );
+
+            harmony.Patch(
+                AccessTools.Method(type, "AddGroupToList"),
+                postfix: new HarmonyMethod(patchClass, nameof(AddGroupToListPostfix))
+            );
+
+            harmony.Patch(
+                AccessTools.Method(type, "TerminalSystem_GroupRemoved"),
+                postfix: new HarmonyMethod(patchClass, nameof(TerminalSystem_GroupRemovedPostfix))
+            );
+
+            harmony.Patch(
+                AccessTools.Method(type, "groupDelete_ButtonClicked"),
+                postfix: new HarmonyMethod(patchClass, nameof(groupDelete_ButtonClickedPostfix))
+            );
+
+            harmony.Patch(
+                AccessTools.Method(type, "groupSave_ButtonClicked"),
+                postfix: new HarmonyMethod(patchClass, nameof(groupSave_ButtonClickedPostfix))
+            );
+
+            harmony.Patch(
+                AccessTools.Method(type, "SelectBlocks", Type.EmptyTypes),
+                postfix: new HarmonyMethod(patchClass, nameof(SelectBlocksPostfix))
+            );
+
+            harmony.Patch(
+                AccessTools.Method(type, "TerminalSystem_BlockAdded"),
+                prefix: new HarmonyMethod(patchClass, nameof(TerminalSystem_BlockAddedPrefix))
+            );
+
+            harmony.Patch(
+                AccessTools.Method(type, "TerminalSystem_BlockRemoved"),
+                postfix: new HarmonyMethod(patchClass, nameof(TerminalSystem_BlockRemovedPostfix))
+            );
+
+            harmony.Patch(
+                AccessTools.Method(type, "Close"),
+                prefix: new HarmonyMethod(patchClass, nameof(ClosePrefix))
+            );
+
+            harmony.Patch(
+                AccessTools.Method(type, "blockSearch_TextChanged"),
+                prefix: new HarmonyMethod(patchClass, nameof(blockSearch_TextChangedPrefix))
+            );
+
+            harmony.Patch(
+                AccessTools.Method(type, "PopulateBlockList"),
+                transpiler: new HarmonyMethod(patchClass, nameof(PopulateBlockListTranspiler))
+            );
+
+            harmony.Patch(
+                AccessTools.Method(type, "UpdateItemAppearance"),
+                transpiler: new HarmonyMethod(patchClass, nameof(UpdateItemAppearanceTranspiler))
+            );
+        }
+
         private static ControlPanelLogic logic;
 
         [HarmonyPrefix]
-        [HarmonyPatch(nameof(MyTerminalControlPanel.Init))]
-        private static bool InitPrefix(MyTerminalControlPanel __instance, IMyGuiControlsParent controlsParent)
+        [HarmonyPatch("Init")]
+        // ReSharper disable once InconsistentNaming
+        private static bool InitPrefix(object __instance, IMyGuiControlsParent controlsParent)
         {
             // Config conditions are inside the constructor
-            logic = new ControlPanelLogic(__instance, controlsParent);
+            Debug.Assert(__instance != null);
+            logic = new ControlPanelLogic(new MyTerminalControlPanelWrapper(__instance), controlsParent);
             return true;
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(nameof(MyTerminalControlPanel.Init))]
+        [HarmonyPatch("Init")]
         private static void InitPostfix()
         {
             if (Config.Current.EnableBlockFilter)
@@ -52,7 +124,7 @@ namespace ClientPlugin.Patches
         {
             if (!Config.Current.EnableBlockFilter)
                 return;
-            
+
             logic.RegisterGroup(group);
         }
 
@@ -62,27 +134,27 @@ namespace ClientPlugin.Patches
         {
             if (!Config.Current.EnableBlockFilter)
                 return;
-            
+
             logic.UnregisterGroup(group);
         }
 
         [HarmonyPostfix]
         [HarmonyPatch("groupDelete_ButtonClicked")]
-        private static void groupDelete_ButtonClickedPostfix(MyGuiControlButton obj)
+        private static void groupDelete_ButtonClickedPostfix()
         {
             if (!Config.Current.EnableBlockFilter)
                 return;
-            
+
             logic.UpdateModeSelector();
         }
 
         [HarmonyPostfix]
         [HarmonyPatch("groupSave_ButtonClicked")]
-        private static void groupSave_ButtonClickedPostfix(MyGuiControlButton obj)
+        private static void groupSave_ButtonClickedPostfix()
         {
             if (!Config.Current.EnableBlockFilter)
                 return;
-            
+
             logic.PrepareGroupRenaming();
             logic.UpdateModeSelector();
         }
@@ -93,7 +165,7 @@ namespace ClientPlugin.Patches
         {
             if (!Config.Current.EnableBlockFilter)
                 return;
-            
+
             logic.AfterSelectBlocks();
         }
 
@@ -102,28 +174,28 @@ namespace ClientPlugin.Patches
         #region Blocks
 
         [HarmonyPrefix]
-        [HarmonyPatch(nameof(MyTerminalControlPanel.TerminalSystem_BlockAdded))]
+        [HarmonyPatch("TerminalSystem_BlockAdded")]
         private static bool TerminalSystem_BlockAddedPrefix(MyTerminalBlock obj)
         {
             if (!Config.Current.EnableBlockFilter)
                 return true;
-            
+
             logic.BlockAdded(obj);
             return false;
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(nameof(MyTerminalControlPanel.TerminalSystem_BlockRemoved))]
+        [HarmonyPatch("TerminalSystem_BlockRemoved")]
         private static void TerminalSystem_BlockRemovedPostfix(MyTerminalBlock obj)
         {
             if (!Config.Current.EnableBlockFilter)
                 return;
-            
+
             logic.UnregisterBlock(obj);
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch(nameof(MyTerminalControlPanel.Close))]
+        [HarmonyPatch("Close")]
         private static bool ClosePrefix()
         {
             if (!Config.Current.EnableBlockFilter && logic != null)
@@ -131,22 +203,23 @@ namespace ClientPlugin.Patches
                 logic.Close();
                 logic = null;
             }
+
             return true;
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch(nameof(MyTerminalControlPanel.blockSearch_TextChanged))]
+        [HarmonyPatch("blockSearch_TextChanged")]
         private static bool blockSearch_TextChangedPrefix(string text)
         {
             if (!Config.Current.EnableBlockFilter)
                 return true;
-            
+
             logic.blockSearch_TextChanged(text);
             return false;
         }
 
         [HarmonyTranspiler]
-        [HarmonyPatch(nameof(MyTerminalControlPanel.PopulateBlockList))]
+        [HarmonyPatch("PopulateBlockList")]
         private static IEnumerable<CodeInstruction> PopulateBlockListTranspiler(IEnumerable<CodeInstruction> code)
         {
             var il = code.ToList();
@@ -178,13 +251,13 @@ namespace ClientPlugin.Patches
         {
             // Config condition is inside
             logic.PopulateBlockList_AddBlocks(blocks);
-            
+
             // Must update the mode selector, but it should keep its current selection
             logic.UpdateModeSelector();
         }
 
         [HarmonyTranspiler]
-        [HarmonyPatch(nameof(MyTerminalControlPanel.UpdateItemAppearance))]
+        [HarmonyPatch("UpdateItemAppearance")]
         private static IEnumerable<CodeInstruction> UpdateItemAppearanceTranspiler(IEnumerable<CodeInstruction> code)
         {
             var il = code.ToList();

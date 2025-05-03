@@ -2,18 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Runtime.Remoting.Messaging;
 using System.Text;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Entities.Cube;
 using Sandbox.Game.GameSystems;
-using Sandbox.Game.Gui;
 using Sandbox.Game.Screens.Helpers;
 using Sandbox.Graphics.GUI;
 using VRage.Utils;
 using VRageMath;
 using ClientPlugin.Extensions;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Sandbox.Common.ObjectBuilders;
 
 namespace ClientPlugin.Logic
@@ -23,10 +20,10 @@ namespace ClientPlugin.Logic
         // FIXME: Transfer of reference via global state
         public static MyGuiControlButton RenameGroupButton;
 
-        private readonly MyTerminalControlPanel controlPanel;
+        private readonly MyTerminalControlPanelWrapper controlPanel;
 
         private bool showDefaultNames;
-        
+
         private bool groupRenamingInitialized;
         private string originalGroupName;
 
@@ -37,16 +34,14 @@ namespace ClientPlugin.Logic
         private MyGuiControlCombobox modeSelectorCombobox;
         private Dictionary<int, object> modeSelectorItemData = new Dictionary<int, object>();
 
-        private HashSet<string> blockTypes = new HashSet<string>();
-        private Dictionary<long, HashSet<string>> groupsByBlock = new Dictionary<long, HashSet<string>>();
-        private Dictionary<string, HashSet<long>> blocksByGroup = new Dictionary<string, HashSet<long>>();
+        private readonly HashSet<string> blockTypes = new HashSet<string>();
+        private readonly Dictionary<long, HashSet<string>> groupsByBlock = new Dictionary<long, HashSet<string>>();
+        private readonly Dictionary<string, HashSet<long>> blocksByGroup = new Dictionary<string, HashSet<long>>();
 
         private object ModeSelectorData => modeSelectorItemData.GetValueOrDefault((int)modeSelectorCombobox.GetSelectedKey(), BlockListMode.Default);
-        public bool IsModeSelectorEmpty => modeSelectorItemData.Count == 0;
 
-        public ControlPanelLogic(MyTerminalControlPanel controlPanel, IMyGuiControlsParent controlsParent)
+        public ControlPanelLogic(MyTerminalControlPanelWrapper controlPanel, IMyGuiControlsParent controlsParent)
         {
-            Debug.Assert(controlPanel != null);
             Debug.Assert(controlsParent != null);
 
             this.controlPanel = controlPanel;
@@ -58,7 +53,7 @@ namespace ClientPlugin.Logic
         {
             if (blockFilterInitialized || !Config.Current.EnableBlockFilter)
                 return;
-            
+
             blockListbox = (MyGuiControlListbox)controlsParent.Controls.GetControlByName("FunctionalBlockListbox");
 
             showDefaultNames = false;
@@ -83,7 +78,7 @@ namespace ClientPlugin.Logic
                 return;
 
             originalGroupName = "";
-            
+
             RenameGroupButton.Enabled = false;
             RenameGroupButton.SetToolTip(MyStringId.GetOrCompute("Rename group"));
             RenameGroupButton.ButtonClicked += OnRenameGroupButtonClicked;
@@ -143,10 +138,11 @@ namespace ClientPlugin.Logic
                     case BlockListMode.Default:
                     case BlockListMode.ShipOrStation:
                     case BlockListMode.Subgrid:
-                        enableShowAll = true; 
+                        enableShowAll = true;
                         break;
                 }
             }
+
             controlPanel.m_showAll.Visible = enableShowAll;
             controlPanel.m_showAll.Enabled = enableShowAll;
         }
@@ -210,15 +206,16 @@ namespace ClientPlugin.Logic
                         case BlockListMode mode:
                             selected = previousData is BlockListMode previousMode && mode == previousMode;
                             break;
-                        
+
                         case MyBlockGroup group:
                             selected = previousData is MyBlockGroup previousGroup && group.Name == previousGroup.Name;
                             break;
-                            
+
                         case string blockType:
                             selected = previousData is string previousBlockType && blockType == previousBlockType;
                             break;
                     }
+
                     if (selected)
                     {
                         modeSelectorCombobox.SelectItemByIndex(i);
@@ -236,10 +233,7 @@ namespace ClientPlugin.Logic
         private void AddBlockGroupsToModeSelector()
         {
             var terminalSystem = controlPanel.TerminalSystem;
-            if (terminalSystem == null)
-                return;
-
-            if (terminalSystem.BlockGroups == null)
+            if (terminalSystem?.BlockGroups == null)
                 return;
 
             var blockGroups = terminalSystem.BlockGroups.ToArray();
@@ -278,7 +272,7 @@ namespace ClientPlugin.Logic
         {
             if (blockListbox == null)
                 return;
-            
+
             // This is required when "Show all block" is toggled
             if (modeSelectorItemData.Count == 0)
                 UpdateModeSelector();
@@ -290,7 +284,7 @@ namespace ClientPlugin.Logic
             }
 
             var defaultMode = false;
-            var showHiddenBlocks = MyTerminalControlPanel.m_showAllTerminalBlocks;
+            var showHiddenBlocks = MyTerminalControlPanelWrapper.ShowAllTerminalBlocks;
 
             var modeSelectorData = ModeSelectorData;
             if (modeSelectorData is BlockListMode mode)
@@ -461,7 +455,7 @@ namespace ClientPlugin.Logic
                 blocksByGroup[groupName] = blocks = new HashSet<long>();
             }
 
-            foreach (var terminalBlock in group.Blocks)
+            foreach (var terminalBlock in group.GetBlocks())
             {
                 var entityId = terminalBlock.EntityId;
                 blocks.Add(entityId);
@@ -489,7 +483,7 @@ namespace ClientPlugin.Logic
         public void BlockAdded(MyTerminalBlock myTerminalBlock)
         {
             RegisterBlock(myTerminalBlock);
-            var visible = (myTerminalBlock == controlPanel.m_originalBlock || myTerminalBlock.ShowInTerminal || MyTerminalControlPanel.m_showAllTerminalBlocks) && IsBlockShownInMode(myTerminalBlock, ModeSelectorData);
+            var visible = (myTerminalBlock == controlPanel.m_originalBlock || myTerminalBlock.ShowInTerminal || MyTerminalControlPanelWrapper.ShowAllTerminalBlocks) && IsBlockShownInMode(myTerminalBlock, ModeSelectorData);
             controlPanel.AddBlockToList(myTerminalBlock, visible);
         }
 
@@ -507,7 +501,7 @@ namespace ClientPlugin.Logic
 
             var modeSelectorData = ModeSelectorData;
             var originalBlock = controlPanel.m_originalBlock;
-            var showAllTerminalBlocks = MyTerminalControlPanel.m_showAllTerminalBlocks;
+            var showAllTerminalBlocks = MyTerminalControlPanelWrapper.ShowAllTerminalBlocks;
             foreach (var terminalBlock in blocks)
             {
                 RegisterBlock(terminalBlock);
@@ -525,7 +519,7 @@ namespace ClientPlugin.Logic
                 return;
             }
 
-            itemText.Append(block.m_defaultCustomName.ToString().TrimEnd());
+            itemText.Append(block.GetDefaultCustomName().ToString().TrimEnd());
 
             if (block is MyThrust thruster && thruster.GridThrustDirection != Vector3I.Zero)
             {
@@ -537,7 +531,7 @@ namespace ClientPlugin.Logic
         {
             if (!groupRenamingInitialized)
                 return;
-            
+
             var newName = groupNameTextbox.Text.Trim();
             RenameGroupButton.Enabled = controlPanel.m_groupDelete.Enabled &&
                                         originalGroupName != "" &&
@@ -548,7 +542,7 @@ namespace ClientPlugin.Logic
         public void AfterSelectBlocks()
         {
             PrepareGroupRenaming();
-            
+
             var currentGroups = controlPanel.m_currentGroups;
             SetOriginalGroupName(currentGroups.Count == 1 ? currentGroups[0].Name.ToString().Trim() : "");
         }
@@ -683,7 +677,7 @@ namespace ClientPlugin.Logic
         {
             if (controlPanel.m_searchBox == null)
                 return;
-            
+
             if (searchText == null || controlPanel.m_searchBox.SearchText == searchText)
                 return;
 
