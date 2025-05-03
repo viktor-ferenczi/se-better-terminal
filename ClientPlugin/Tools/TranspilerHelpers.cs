@@ -83,11 +83,16 @@ namespace ClientPlugin.Tools
             il.RemoveRange(i - 2, 3);
         }
 
+        public static string Hash(this List<CodeInstruction> il)
+        {
+            return il.HashInstructions().CombineHashCodes().ToString("x8");
+        }
+        
         private static string FormatCode(this List<CodeInstruction> il)
         {
             var sb = new StringBuilder();
 
-            var hash = il.HashInstructions().CombineHashCodes().ToString("x8");
+            var hash = il.Hash();
             sb.Append($"// {hash}\r\n");
 
             foreach (var ci in il)

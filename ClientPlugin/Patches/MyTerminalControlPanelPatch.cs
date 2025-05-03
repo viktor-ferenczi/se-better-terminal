@@ -76,7 +76,7 @@ namespace ClientPlugin.Patches
             );
 
             harmony.Patch(
-                AccessTools.Method(type, "blockSearch_TextChanged"),
+                AccessTools.Method(type, "blockSearch_TextChanged", new[] { typeof(string) }),
                 prefix: new HarmonyMethod(patchClass, nameof(blockSearch_TextChangedPrefix))
             );
 
@@ -225,6 +225,13 @@ namespace ClientPlugin.Patches
             var il = code.ToList();
             il.RecordOriginalCode();
 
+            var actual = il.Hash();
+            const string expected = "60c4cb3b";
+            if (actual != expected)
+            {
+                throw new Exception("Detected code change in MyTerminalControlPanel.PopulateBlockList: actual {actual}, expected {expected}");
+            }
+
             // We replace the code between these two lines:
             // this.m_blockListbox.IsInBulkInsert = true;
             // this.m_blockListbox.IsInBulkInsert = false;
@@ -263,6 +270,13 @@ namespace ClientPlugin.Patches
             var il = code.ToList();
             il.RecordOriginalCode();
 
+            var actual = il.Hash();
+            const string expected = "378bbed9";
+            if (actual != expected)
+            {
+                throw new Exception("Detected code change in MyTerminalControlPanel.UpdateItemAppearance: actual {actual}, expected {expected}");
+            }
+            
             // Replace this statement:
             // block.GetTerminalName(item.Text);
             var blockLoads = il.FindAllIndex(ci => ci.opcode == OpCodes.Ldarg_1).ToArray();
