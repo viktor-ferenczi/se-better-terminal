@@ -108,6 +108,7 @@ _in alphabetical order_
 - wafoxxx
 
 #### Captain level
+- CaptFacepalm
 - Diggz
 - jiringgot
 - Jimbo
