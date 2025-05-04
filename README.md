@@ -72,12 +72,10 @@ Alternatively you can open the settings by double-clicking on this plugin in the
 dialog of Plugin Loader, then clicking **Settings** in the dialog opened.
 
 The configuration allows for setting a default search text, which is useful if you work
-with groups and block which contain the same substring in their name, for example the
-ship's or station's name. It also allows for turning each feature ON/OFF.
+with on blocks and groups with a common part in their name, for example the ship's or
+station's name. It also allows for turning each feature ON/OFF.
 
-The configuration can be changed anytime without having to restart the game. The
-transpiler patches are always loaded, but they provided the same functionality as
-the original game if it is disabled.
+The configuration can be changed anytime without having to restart the game.
 
 ![Configuration](doc/ConfigDialog.png "Config Dialog")
 
