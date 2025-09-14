@@ -20,7 +20,7 @@ namespace ClientPlugin.Patches
     // ReSharper disable once UnusedType.Global
     public static class MyTerminalControlPanelPatch
     {
-        private static readonly bool DisableCodeValidations = (Environment.GetEnvironmentVariable("SE_PLUGIN_DISABLE_METHOD_VERIFICATION ") ?? "0") != "0";
+        private static readonly bool DisableCodeValidations = (Environment.GetEnvironmentVariable("SE_PLUGIN_DISABLE_METHOD_VERIFICATION") ?? "0") != "0";
         
         // HarmonyLib does not look for a TargetType method either to return the type to patch.
         // So we have to call this ugly manual patch application from the mod's init:
