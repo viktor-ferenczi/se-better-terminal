@@ -20,6 +20,8 @@ namespace ClientPlugin.Patches
     // ReSharper disable once UnusedType.Global
     public static class MyTerminalControlPanelPatch
     {
+        private static readonly bool DisableCodeValidations = (Environment.GetEnvironmentVariable("SE_PLUGIN_DISABLE_METHOD_VERIFICATION ") ?? "0") != "0";
+        
         // HarmonyLib does not look for a TargetType method either to return the type to patch.
         // So we have to call this ugly manual patch application from the mod's init:
         public static void Apply(Harmony harmony)
@@ -227,7 +229,7 @@ namespace ClientPlugin.Patches
 
             var actual = il.Hash();
             const string expected = "60c4cb3b";
-            if (actual != expected)
+            if (actual != expected && !DisableCodeValidations)
             {
                 throw new Exception("Detected code change in MyTerminalControlPanel.PopulateBlockList: actual {actual}, expected {expected}");
             }
@@ -272,7 +274,7 @@ namespace ClientPlugin.Patches
 
             var actual = il.Hash();
             const string expected = "378bbed9";
-            if (actual != expected)
+            if (actual != expected && !DisableCodeValidations)
             {
                 throw new Exception("Detected code change in MyTerminalControlPanel.UpdateItemAppearance: actual {actual}, expected {expected}");
             }
