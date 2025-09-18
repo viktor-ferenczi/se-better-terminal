@@ -18,6 +18,7 @@ namespace ClientPlugin.Tools
     public static class TranspilerHelpers
     {
         private static readonly int DotNetMajorVersion = Environment.Version.Major; 
+        private static readonly bool DisableCodeValidations = (Environment.GetEnvironmentVariable("SE_PLUGIN_DISABLE_METHOD_VERIFICATION") ?? "0") != "0";
         
         public delegate bool OpcodePredicate(OpCode opcode);
 
@@ -86,6 +87,15 @@ namespace ClientPlugin.Tools
         public static string Hash(this List<CodeInstruction> il)
         {
             return il.HashInstructions().CombineHashCodes().ToString("x8");
+        }
+
+        public static void VerifyCodeHash(this List<CodeInstruction> il, string expected)
+        {
+            var actual = il.Hash();
+            if (actual != expected && !DisableCodeValidations)
+            {
+                throw new Exception("Detected code change in MyTerminalControlPanel.PopulateBlockList: actual {actual}, expected {expected}");
+            }
         }
         
         private static string FormatCode(this List<CodeInstruction> il)

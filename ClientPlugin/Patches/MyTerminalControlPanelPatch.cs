@@ -5,109 +5,37 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using ClientPlugin.Extensions;
 using ClientPlugin.Logic;
 using ClientPlugin.Tools;
 using HarmonyLib;
 using Sandbox.Game.Entities.Cube;
 using Sandbox.Game.GameSystems;
+using Sandbox.Game.Gui;
 using Sandbox.Graphics.GUI;
 
 namespace ClientPlugin.Patches
 {
-    // This does not work: [HarmonyPatch("Sandbox.Game.Gui.MyTerminalControlPanel")]
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
     // ReSharper disable once UnusedType.Global
+    [HarmonyPatch(typeof(MyTerminalControlPanel))]
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
     public static class MyTerminalControlPanelPatch
     {
-        private static readonly bool DisableCodeValidations = (Environment.GetEnvironmentVariable("SE_PLUGIN_DISABLE_METHOD_VERIFICATION") ?? "0") != "0";
-        
-        // HarmonyLib does not look for a TargetType method either to return the type to patch.
-        // So we have to call this ugly manual patch application from the mod's init:
-        public static void Apply(Harmony harmony)
-        {
-            var type = AccessTools.TypeByName("Sandbox.Game.Gui.MyTerminalControlPanel");
-            if (type == null) throw new Exception("Target type not found");
-
-            var patchClass = typeof(MyTerminalControlPanelPatch);
-
-            harmony.Patch(
-                AccessTools.Method(type, "Init"),
-                prefix: new HarmonyMethod(patchClass, nameof(InitPrefix)),
-                postfix: new HarmonyMethod(patchClass, nameof(InitPostfix))
-            );
-
-            harmony.Patch(
-                AccessTools.Method(type, "AddGroupToList"),
-                postfix: new HarmonyMethod(patchClass, nameof(AddGroupToListPostfix))
-            );
-
-            harmony.Patch(
-                AccessTools.Method(type, "TerminalSystem_GroupRemoved"),
-                postfix: new HarmonyMethod(patchClass, nameof(TerminalSystem_GroupRemovedPostfix))
-            );
-
-            harmony.Patch(
-                AccessTools.Method(type, "groupDelete_ButtonClicked"),
-                postfix: new HarmonyMethod(patchClass, nameof(groupDelete_ButtonClickedPostfix))
-            );
-
-            harmony.Patch(
-                AccessTools.Method(type, "groupSave_ButtonClicked"),
-                postfix: new HarmonyMethod(patchClass, nameof(groupSave_ButtonClickedPostfix))
-            );
-
-            harmony.Patch(
-                AccessTools.Method(type, "SelectBlocks", Type.EmptyTypes),
-                postfix: new HarmonyMethod(patchClass, nameof(SelectBlocksPostfix))
-            );
-
-            harmony.Patch(
-                AccessTools.Method(type, "TerminalSystem_BlockAdded"),
-                prefix: new HarmonyMethod(patchClass, nameof(TerminalSystem_BlockAddedPrefix))
-            );
-
-            harmony.Patch(
-                AccessTools.Method(type, "TerminalSystem_BlockRemoved"),
-                postfix: new HarmonyMethod(patchClass, nameof(TerminalSystem_BlockRemovedPostfix))
-            );
-
-            harmony.Patch(
-                AccessTools.Method(type, "Close"),
-                prefix: new HarmonyMethod(patchClass, nameof(ClosePrefix))
-            );
-
-            harmony.Patch(
-                AccessTools.Method(type, "blockSearch_TextChanged", new[] { typeof(string) }),
-                prefix: new HarmonyMethod(patchClass, nameof(blockSearch_TextChangedPrefix))
-            );
-
-            harmony.Patch(
-                AccessTools.Method(type, "PopulateBlockList"),
-                transpiler: new HarmonyMethod(patchClass, nameof(PopulateBlockListTranspiler))
-            );
-
-            harmony.Patch(
-                AccessTools.Method(type, "UpdateItemAppearance"),
-                transpiler: new HarmonyMethod(patchClass, nameof(UpdateItemAppearanceTranspiler))
-            );
-        }
-
         private static ControlPanelLogic logic;
 
-        [HarmonyPrefix]
-        [HarmonyPatch("Init")]
         // ReSharper disable once InconsistentNaming
-        private static bool InitPrefix(object __instance, IMyGuiControlsParent controlsParent)
+        [HarmonyPrefix]
+        [HarmonyPatch(nameof(MyTerminalControlPanel.Init))]
+        private static bool InitPrefix(MyTerminalControlPanel __instance, IMyGuiControlsParent controlsParent)
         {
-            // Config conditions are inside the constructor
             Debug.Assert(__instance != null);
-            logic = new ControlPanelLogic(new MyTerminalControlPanelWrapper(__instance), controlsParent);
+            
+            // Config conditions are inside the constructor
+            logic = new ControlPanelLogic(__instance, controlsParent);
             return true;
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch("Init")]
+        [HarmonyPatch(nameof(MyTerminalControlPanel.Init))]
         private static void InitPostfix()
         {
             if (Config.Current.EnableBlockFilter)
@@ -176,7 +104,7 @@ namespace ClientPlugin.Patches
         #region Blocks
 
         [HarmonyPrefix]
-        [HarmonyPatch("TerminalSystem_BlockAdded")]
+        [HarmonyPatch(nameof(MyTerminalControlPanel.TerminalSystem_BlockAdded))]
         private static bool TerminalSystem_BlockAddedPrefix(MyTerminalBlock obj)
         {
             if (!Config.Current.EnableBlockFilter)
@@ -187,7 +115,7 @@ namespace ClientPlugin.Patches
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch("TerminalSystem_BlockRemoved")]
+        [HarmonyPatch(nameof(MyTerminalControlPanel.TerminalSystem_BlockRemoved))]
         private static void TerminalSystem_BlockRemovedPostfix(MyTerminalBlock obj)
         {
             if (!Config.Current.EnableBlockFilter)
@@ -197,7 +125,7 @@ namespace ClientPlugin.Patches
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch("Close")]
+        [HarmonyPatch(nameof(MyTerminalControlPanel.Close))]
         private static bool ClosePrefix()
         {
             if (!Config.Current.EnableBlockFilter && logic != null)
@@ -205,34 +133,27 @@ namespace ClientPlugin.Patches
                 logic.Close();
                 logic = null;
             }
-
             return true;
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch("blockSearch_TextChanged")]
-        private static bool blockSearch_TextChangedPrefix(string text)
+        [HarmonyPatch(nameof(MyTerminalControlPanel.blockSearch_TextChanged), typeof(string), typeof(bool))]
+        private static bool blockSearch_TextChangedPrefix(string text, bool scrollToTop)
         {
             if (!Config.Current.EnableBlockFilter)
                 return true;
 
-            logic.blockSearch_TextChanged(text);
+            logic.blockSearch_TextChanged(text, scrollToTop);
             return false;
         }
 
         [HarmonyTranspiler]
-        [HarmonyPatch("PopulateBlockList")]
+        [HarmonyPatch(nameof(MyTerminalControlPanel.PopulateBlockList))]
         private static IEnumerable<CodeInstruction> PopulateBlockListTranspiler(IEnumerable<CodeInstruction> code)
         {
             var il = code.ToList();
             il.RecordOriginalCode();
-
-            var actual = il.Hash();
-            const string expected = "60c4cb3b";
-            if (actual != expected && !DisableCodeValidations)
-            {
-                throw new Exception("Detected code change in MyTerminalControlPanel.PopulateBlockList: actual {actual}, expected {expected}");
-            }
+            il.VerifyCodeHash("60c4cb3b");
 
             // We replace the code between these two lines:
             // this.m_blockListbox.IsInBulkInsert = true;
@@ -266,18 +187,12 @@ namespace ClientPlugin.Patches
         }
 
         [HarmonyTranspiler]
-        [HarmonyPatch("UpdateItemAppearance")]
+        [HarmonyPatch(nameof(MyTerminalControlPanel.UpdateItemAppearance))]
         private static IEnumerable<CodeInstruction> UpdateItemAppearanceTranspiler(IEnumerable<CodeInstruction> code)
         {
             var il = code.ToList();
             il.RecordOriginalCode();
-
-            var actual = il.Hash();
-            const string expected = "378bbed9";
-            if (actual != expected && !DisableCodeValidations)
-            {
-                throw new Exception("Detected code change in MyTerminalControlPanel.UpdateItemAppearance: actual {actual}, expected {expected}");
-            }
+            il.VerifyCodeHash("378bbed9");
             
             // Replace this statement:
             // block.GetTerminalName(item.Text);
