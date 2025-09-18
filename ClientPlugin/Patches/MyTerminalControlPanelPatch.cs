@@ -23,7 +23,7 @@ namespace ClientPlugin.Patches
         private static readonly bool DisableCodeValidations = (Environment.GetEnvironmentVariable("SE_PLUGIN_DISABLE_METHOD_VERIFICATION") ?? "0") != "0";
         
         // HarmonyLib does not look for a TargetType method either to return the type to patch.
-        // So we have to call this ugly manual patch application from the mod's init:
+        // So we have to call this ugly manual patch application from the plugin's init:
         public static void Apply(Harmony harmony)
         {
             var type = AccessTools.TypeByName("Sandbox.Game.Gui.MyTerminalControlPanel");

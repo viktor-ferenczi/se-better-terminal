@@ -122,6 +122,7 @@ _in alphabetical order_
 #### Testers
 - Avaness
 - mkaito
+- Unruly
 
 ### Creators
 - avaness - Plugin Loader
