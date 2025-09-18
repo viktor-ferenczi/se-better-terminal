@@ -27,7 +27,7 @@ namespace ClientPlugin.Extensions
             var grid = block.CubeGrid;
             if (grid != null)
             {
-                TooltipText.Append("\nOn grid: ");
+                TooltipText.Append("\nGrid: ");
                 TooltipText.Append(grid.GetSafeName());
             }
 
