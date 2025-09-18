@@ -20,7 +20,6 @@ namespace ClientPlugin.Patches
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     public static class MyTerminalControlPanelPatch
     {
-        private static readonly bool DisableCodeValidations = (Environment.GetEnvironmentVariable("SE_PLUGIN_DISABLE_METHOD_VERIFICATION") ?? "0") != "0";
         private static ControlPanelLogic logic;
 
         // ReSharper disable once InconsistentNaming
@@ -154,13 +153,7 @@ namespace ClientPlugin.Patches
         {
             var il = code.ToList();
             il.RecordOriginalCode();
-
-            var actual = il.Hash();
-            const string expected = "60c4cb3b";
-            if (actual != expected && !DisableCodeValidations)
-            {
-                throw new Exception("Detected code change in MyTerminalControlPanel.PopulateBlockList: actual {actual}, expected {expected}");
-            }
+            il.VerifyCodeHash("60c4cb3b");
 
             // We replace the code between these two lines:
             // this.m_blockListbox.IsInBulkInsert = true;
@@ -199,13 +192,7 @@ namespace ClientPlugin.Patches
         {
             var il = code.ToList();
             il.RecordOriginalCode();
-
-            var actual = il.Hash();
-            const string expected = "378bbed9";
-            if (actual != expected && !DisableCodeValidations)
-            {
-                throw new Exception("Detected code change in MyTerminalControlPanel.UpdateItemAppearance: actual {actual}, expected {expected}");
-            }
+            il.VerifyCodeHash("378bbed9");
             
             // Replace this statement:
             // block.GetTerminalName(item.Text);
