@@ -137,13 +137,13 @@ namespace ClientPlugin.Patches
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch(nameof(MyTerminalControlPanel.blockSearch_TextChanged))]
-        private static bool blockSearch_TextChangedPrefix(string text)
+        [HarmonyPatch(nameof(MyTerminalControlPanel.blockSearch_TextChanged), typeof(string), typeof(bool))]
+        private static bool blockSearch_TextChangedPrefix(string text, bool scrollToTop)
         {
             if (!Config.Current.EnableBlockFilter)
                 return true;
 
-            logic.blockSearch_TextChanged(text);
+            logic.blockSearch_TextChanged(text, scrollToTop);
             return false;
         }
 

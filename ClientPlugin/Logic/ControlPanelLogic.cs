@@ -270,7 +270,7 @@ namespace ClientPlugin.Logic
             modeSelectorCombobox.AddItem(key, MyStringId.GetOrCompute(label), key);
         }
 
-        public void blockSearch_TextChanged(string text)
+        public void blockSearch_TextChanged(string text, bool scrollToTop)
         {
             if (blockListbox == null)
                 return;
@@ -365,7 +365,7 @@ namespace ClientPlugin.Logic
 
             if (firstSelectedVisibleItemPosition >= 0)
                 blockListbox.SetScrollPosition(firstSelectedVisibleItemPosition);
-            else
+            else if (scrollToTop)
                 blockListbox.ScrollToolbarToTop();
         }
 
@@ -522,7 +522,6 @@ namespace ClientPlugin.Logic
             }
 
             itemText.Append(block.m_defaultCustomName.ToString().TrimEnd());
-
             if (block is MyThrust thruster && thruster.GridThrustDirection != Vector3I.Zero)
             {
                 itemText.Append($" ({thruster.GetDirectionString()})");
@@ -648,8 +647,7 @@ namespace ClientPlugin.Logic
 #endif
 
             controlPanel.RefreshBlockList();
-            blockSearch_TextChanged(controlPanel.m_searchBox.SearchText);
-            blockListbox.ScrollToolbarToTop();
+            blockSearch_TextChanged(controlPanel.m_searchBox.SearchText, true);
 
             foreach (var item in blockListbox.Items)
             {
@@ -660,14 +658,6 @@ namespace ClientPlugin.Logic
                     break;
                 }
             }
-        }
-
-        private MyTerminalBlock[] GetSelectedBlocks()
-        {
-            return blockListbox.SelectedItems
-                .Where(item => item.UserData is MyTerminalBlock)
-                .Select(item => (MyTerminalBlock)item.UserData)
-                .ToArray();
         }
 
         public void ScrollBlockListToTop()
