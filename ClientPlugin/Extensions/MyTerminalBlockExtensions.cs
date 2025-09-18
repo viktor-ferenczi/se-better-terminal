@@ -31,6 +31,12 @@ namespace ClientPlugin.Extensions
                 TooltipText.Append(grid.GetSafeName());
             }
 
+            var integrity = (int)Math.Round(100.0f * block.SlimBlock.Integrity / Math.Max(0.001f, block.SlimBlock.MaxIntegrity));
+            TooltipText.Append("\nIntegrity: ");
+            TooltipText.Append(integrity);
+            TooltipText.Append("%");
+
+#if DEBUG
             TooltipText.Append("\nBlock position: ");
             TooltipText.Append(block.Position.Format());
 
@@ -39,12 +45,8 @@ namespace ClientPlugin.Extensions
 
             TooltipText.Append("\nBlock size in cubes: ");
             TooltipText.Append(block.BlockDefinition.Size.Format());
-
-            var integrity = (int)Math.Round(100.0f * block.SlimBlock.Integrity / Math.Max(0.001f, block.SlimBlock.MaxIntegrity));
-            TooltipText.Append("\nIntegrity: ");
-            TooltipText.Append(integrity);
-            TooltipText.Append("%");
-
+#endif
+            
             return TooltipText.ToString();
         }
 
