@@ -12,6 +12,7 @@ using VRage.Utils;
 using VRageMath;
 using ClientPlugin.Extensions;
 using Sandbox.Common.ObjectBuilders;
+using Sandbox.Game.Gui;
 
 namespace ClientPlugin.Logic
 {
@@ -20,7 +21,7 @@ namespace ClientPlugin.Logic
         // FIXME: Transfer of reference via global state
         public static MyGuiControlButton RenameGroupButton;
 
-        private readonly MyTerminalControlPanelWrapper controlPanel;
+        private readonly MyTerminalControlPanel controlPanel;
 
         private bool showDefaultNames;
 
@@ -32,7 +33,7 @@ namespace ClientPlugin.Logic
         private MyGuiControlListbox blockListbox;
 
         private MyGuiControlCombobox modeSelectorCombobox;
-        private Dictionary<int, object> modeSelectorItemData = new Dictionary<int, object>();
+        private readonly Dictionary<int, object> modeSelectorItemData = new Dictionary<int, object>();
 
         private readonly HashSet<string> blockTypes = new HashSet<string>();
         private readonly Dictionary<long, HashSet<string>> groupsByBlock = new Dictionary<long, HashSet<string>>();
@@ -40,8 +41,9 @@ namespace ClientPlugin.Logic
 
         private object ModeSelectorData => modeSelectorItemData.GetValueOrDefault((int)modeSelectorCombobox.GetSelectedKey(), BlockListMode.Default);
 
-        public ControlPanelLogic(MyTerminalControlPanelWrapper controlPanel, IMyGuiControlsParent controlsParent)
+        public ControlPanelLogic(MyTerminalControlPanel controlPanel, IMyGuiControlsParent controlsParent)
         {
+            Debug.Assert(controlPanel != null);
             Debug.Assert(controlsParent != null);
 
             this.controlPanel = controlPanel;
@@ -284,7 +286,7 @@ namespace ClientPlugin.Logic
             }
 
             var defaultMode = false;
-            var showHiddenBlocks = MyTerminalControlPanelWrapper.ShowAllTerminalBlocks;
+            var showHiddenBlocks = MyTerminalControlPanel.m_showAllTerminalBlocks;
 
             var modeSelectorData = ModeSelectorData;
             if (modeSelectorData is BlockListMode mode)
@@ -455,7 +457,7 @@ namespace ClientPlugin.Logic
                 blocksByGroup[groupName] = blocks = new HashSet<long>();
             }
 
-            foreach (var terminalBlock in group.GetBlocks())
+            foreach (var terminalBlock in group.Blocks)
             {
                 var entityId = terminalBlock.EntityId;
                 blocks.Add(entityId);
@@ -483,7 +485,7 @@ namespace ClientPlugin.Logic
         public void BlockAdded(MyTerminalBlock myTerminalBlock)
         {
             RegisterBlock(myTerminalBlock);
-            var visible = (myTerminalBlock == controlPanel.m_originalBlock || myTerminalBlock.ShowInTerminal || MyTerminalControlPanelWrapper.ShowAllTerminalBlocks) && IsBlockShownInMode(myTerminalBlock, ModeSelectorData);
+            var visible = (myTerminalBlock == controlPanel.m_originalBlock || myTerminalBlock.ShowInTerminal || MyTerminalControlPanel.m_showAllTerminalBlocks) && IsBlockShownInMode(myTerminalBlock, ModeSelectorData);
             controlPanel.AddBlockToList(myTerminalBlock, visible);
         }
 
@@ -501,7 +503,7 @@ namespace ClientPlugin.Logic
 
             var modeSelectorData = ModeSelectorData;
             var originalBlock = controlPanel.m_originalBlock;
-            var showAllTerminalBlocks = MyTerminalControlPanelWrapper.ShowAllTerminalBlocks;
+            var showAllTerminalBlocks = MyTerminalControlPanel.m_showAllTerminalBlocks;
             foreach (var terminalBlock in blocks)
             {
                 RegisterBlock(terminalBlock);
@@ -519,7 +521,7 @@ namespace ClientPlugin.Logic
                 return;
             }
 
-            itemText.Append(block.GetDefaultCustomName().ToString().TrimEnd());
+            itemText.Append(block.m_defaultCustomName.ToString().TrimEnd());
 
             if (block is MyThrust thruster && thruster.GridThrustDirection != Vector3I.Zero)
             {
@@ -628,7 +630,7 @@ namespace ClientPlugin.Logic
                         continue;
 
 #if DEBUG
-                    MyLog.Default.Info($"BetterTerminal: Redirecting group in toolbar slot {slotBuilder.Index} of {terminalBlock.GetSafeName()}");
+                    MyLog.Default.Info($"BetterTerminal: Redirecting group in toolbar slot {slotBuilder.Index} of {terminalBlock.GetDebugName()}");
 #endif
                     toolbarItemTerminalGroupBuilder.GroupName = newName;
                     toolbar.SetItemAtSlot(slotBuilder.Index, MyToolbarItemFactory.CreateToolbarItem(toolbarItemTerminalGroupBuilder));

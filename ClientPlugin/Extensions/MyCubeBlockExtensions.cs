@@ -1,6 +1,4 @@
-using System.Reflection;
 using System.Runtime.CompilerServices;
-using HarmonyLib;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Entities.Blocks;
 using Sandbox.Game.Entities.Cube;
@@ -41,17 +39,10 @@ namespace ClientPlugin.Extensions
                 case MyTimerBlock b:
                     return b.Toolbar;
                 case MyDefensiveCombatBlock b:
-                    return b.GetWaypointActionsToolbar();
+                    return b.m_waypointActionsToolbar;
             }
 
             return null;
         }
-
-        private static readonly FieldInfo WaypointActionsToolbarField = AccessTools.DeclaredField(typeof(MyDefensiveCombatBlock), "m_waypointActionsToolbar");
-
-        private static MyToolbar GetWaypointActionsToolbar(this MyDefensiveCombatBlock defensiveCombatBlock)
-        {
-            return (MyToolbar)WaypointActionsToolbarField.GetValue(defensiveCombatBlock);
-        }        
     }
 }
