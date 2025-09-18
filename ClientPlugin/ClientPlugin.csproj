@@ -487,7 +487,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Config.cs" />
+    <Compile Include="Extensions\MyTerminalBlockExtensions.cs" />
+    <Compile Include="Extensions\VectorExtensions.cs" />
     <Compile Include="Extensions\MyCubeBlockExtensions.cs" />
+    <Compile Include="Extensions\MyCubeGridExtensions.cs" />
     <Compile Include="Logic\ControlPanelLogic.cs" />
     <Compile Include="Patches\MyGuiScreenTerminalPatch.cs" />
     <Compile Include="Patches\MyTerminalControlPanelPatch.cs" />

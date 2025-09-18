@@ -3,13 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using Sandbox.Game.Entities;
 using Sandbox.Game.Entities.Cube;
 using Sandbox.Game.GameSystems;
 using Sandbox.Game.Screens.Helpers;
 using Sandbox.Graphics.GUI;
 using VRage.Utils;
-using VRageMath;
 using ClientPlugin.Extensions;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Game.Gui;
@@ -515,17 +513,12 @@ namespace ClientPlugin.Logic
         public void UpdateItemAppearance_DefaultNameImplementation(MyTerminalBlock block, MyGuiControlListbox.Item item)
         {
             var itemText = item.Text;
-            if (!Config.Current.EnableBlockFilter || !showDefaultNames)
-            {
+            if (Config.Current.EnableBlockFilter && showDefaultNames)
+                block.AppendDefaultCustomName(itemText);
+            else
                 block.GetTerminalName(itemText);
-                return;
-            }
 
-            itemText.Append(block.m_defaultCustomName.ToString().TrimEnd());
-            if (block is MyThrust thruster && thruster.GridThrustDirection != Vector3I.Zero)
-            {
-                itemText.Append($" ({thruster.GetDirectionString()})");
-            }
+            item.ToolTip = new MyToolTips(block.GetTooltipText());
         }
 
         private void OnGroupNameChanged(MyGuiControlTextbox groupNameTextbox)
