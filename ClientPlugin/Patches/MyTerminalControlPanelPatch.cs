@@ -202,7 +202,7 @@ namespace ClientPlugin.Patches
             var j = blockLoads[1]; // if (!block.IsFunctional)
             il.RemoveRange(i, j - i);
 
-            // Replace with logic to allow showing the default block names instead of the player defined ones
+            // Replace logic to allow showing the default block names instead of the player-defined ones
             il.Insert(i++, new CodeInstruction(OpCodes.Ldarg_1)); // block
             il.Insert(i++, new CodeInstruction(OpCodes.Ldarg_2)); // item
             var methodInfo = AccessTools.DeclaredMethod(typeof(MyTerminalControlPanelPatch), nameof(UpdateItemAppearance_DefaultNameImplementation));
