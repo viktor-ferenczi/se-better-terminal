@@ -9,7 +9,8 @@ using VRage.Plugins;
 namespace ClientPlugin
 {
     // ReSharper disable once UnusedType.Global
-    public class Plugin : IPlugin, IDisposable
+    // ReSharper disable once ClassNeverInstantiated.Global
+    public class Plugin : IPlugin
     {
         public const string Name = "BetterTerminal";
         public static Plugin Instance { get; private set; }
@@ -21,22 +22,17 @@ namespace ClientPlugin
             Instance = this;
             Instance.settingsGenerator = new SettingsGenerator();
 
-            // TODO: Put your one time initialization code here.
             Harmony harmony = new Harmony(Name);
             harmony.PatchAll(Assembly.GetExecutingAssembly());
         }
 
         public void Dispose()
         {
-            // TODO: Save state and close resources here, called when the game exits (not guaranteed!)
-            // IMPORTANT: Do NOT call harmony.UnpatchAll() here! It may break other plugins.
-
             Instance = null;
         }
 
         public void Update()
         {
-            // TODO: Put your update code here. It is called on every simulation frame!
         }
 
         // ReSharper disable once UnusedMember.Global
