@@ -14,42 +14,44 @@ namespace ClientPlugin.Extensions
 {
     public static class MyTerminalBlockExtensions
     {
-        private static readonly StringBuilder TooltipText = new StringBuilder();
+        private static readonly ThreadLocal<StringBuilder> TooltipText = new ThreadLocal<StringBuilder>();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string GetTooltipText(this MyTerminalBlock block)
         {
-            TooltipText.Clear();
-            TooltipText.Append("Custom name: ");
-            TooltipText.Append(block.GetSafeName());
+            var sb = TooltipText.Value ?? (TooltipText.Value = new StringBuilder());
+            
+            sb.Clear();
+            sb.Append("Custom name: ");
+            sb.Append(block.GetSafeName());
 
-            TooltipText.Append("\nOriginal name: ");
-            block.AppendDefaultCustomName(TooltipText);
+            sb.Append("\nOriginal name: ");
+            block.AppendDefaultCustomName(sb);
 
             var grid = block.CubeGrid;
             if (grid != null)
             {
-                TooltipText.Append("\nGrid: ");
-                TooltipText.Append(grid.GetSafeName());
+                sb.Append("\nGrid: ");
+                sb.Append(grid.GetSafeName());
             }
 
             var integrity = (int)Math.Round(100.0f * block.SlimBlock.Integrity / Math.Max(0.001f, block.SlimBlock.MaxIntegrity));
-            TooltipText.Append("\nIntegrity: ");
-            TooltipText.Append(integrity);
-            TooltipText.Append("%");
+            sb.Append("\nIntegrity: ");
+            sb.Append(integrity);
+            sb.Append("%");
 
 #if DEBUG
-            TooltipText.Append("\nBlock position: ");
-            TooltipText.Append(block.Position.Format());
+            sb.Append("\nBlock position: ");
+            sb.Append(block.Position.Format());
 
-            TooltipText.Append("\nBlock min position: ");
-            TooltipText.Append(block.Min.Format());
+            sb.Append("\nBlock min position: ");
+            sb.Append(block.Min.Format());
 
-            TooltipText.Append("\nBlock size in cubes: ");
-            TooltipText.Append(block.BlockDefinition.Size.Format());
+            sb.Append("\nBlock size in cubes: ");
+            sb.Append(block.BlockDefinition.Size.Format());
 #endif
             
-            return TooltipText.ToString();
+            return sb.ToString();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
