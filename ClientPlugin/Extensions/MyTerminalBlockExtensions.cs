@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
@@ -6,6 +7,7 @@ using Sandbox.Game.Entities;
 using Sandbox.Game.Entities.Blocks;
 using Sandbox.Game.Entities.Cube;
 using Sandbox.Game.Screens.Helpers;
+using Sandbox.Game.World;
 using SpaceEngineers.Game.Entities.Blocks;
 using VRage.Utils;
 using VRageMath;
@@ -63,6 +65,13 @@ namespace ClientPlugin.Extensions
             {
                 try
                 {
+                    // Required since game version 1.208.014, because the default block names are now lazy-loaded
+                    // The following lines were copied from the MyTerminalBlock.CustomName getter:
+                    if (block.m_defaultCustomName.Length == 0 && MySession.Static != null && MySession.Static.Ready)
+                    {
+                        block.LoadDefaultCustomName();
+                    }
+                    
                     defaultName = block.m_defaultCustomName.ToString();
                     break;
                 }
@@ -77,6 +86,8 @@ namespace ClientPlugin.Extensions
             if (defaultName == null)
                 defaultName = "!See Better Terminal Issue #5!";
 
+            Debug.Assert(defaultName.Length != 0, "See the LoadDefaultCustomName call above, it did not work for some reason");
+            
             sb.Append(defaultName.TrimEnd());
             if (block is MyThrust thruster && thruster.GridThrustDirection != Vector3I.Zero)
             {
