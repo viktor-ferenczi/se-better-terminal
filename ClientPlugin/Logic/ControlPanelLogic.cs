@@ -618,6 +618,8 @@ namespace ClientPlugin.Logic
                     continue;
 
                 var toolbarBuilder = toolbar.GetObjectBuilder();
+                var modified = false;
+                
                 foreach (var slotBuilder in toolbarBuilder.Slots)
                 {
                     if (!(slotBuilder.Data is MyObjectBuilder_ToolbarItemTerminalGroup toolbarItemTerminalGroupBuilder))
@@ -630,9 +632,13 @@ namespace ClientPlugin.Logic
                     MyLog.Default.Info($"BetterTerminal: Redirecting group in toolbar slot {slotBuilder.Index} of {terminalBlock.GetDebugName()}");
 #endif
                     toolbarItemTerminalGroupBuilder.GroupName = newName;
-                    var toolbarItem = MyToolbarItemFactory.CreateToolbarItem(toolbarItemTerminalGroupBuilder);
-                    
-                    toolbar.SetItemAtSlot(slotBuilder.Index, toolbarItem);
+                    modified = true;
+                }
+                
+                // Re-initialize the toolbar with the modified builder to persist changes
+                if (modified)
+                {
+                    toolbar.Init(toolbarBuilder, terminalBlock);
                 }
             }
 
