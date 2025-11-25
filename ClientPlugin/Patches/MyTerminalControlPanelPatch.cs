@@ -82,10 +82,9 @@ namespace ClientPlugin.Patches
         [HarmonyPatch("groupSave_ButtonClicked")]
         private static void groupSave_ButtonClickedPostfix()
         {
-            if (!Config.Current.EnableBlockFilter)
-                return;
-
-            logic.PrepareGroupRenaming();
+            if (Config.Current.EnableGroupRenaming)
+                logic.PrepareGroupRenaming();
+            
             logic.UpdateModeSelector();
         }
 
@@ -93,9 +92,6 @@ namespace ClientPlugin.Patches
         [HarmonyPatch("SelectBlocks", new Type[0])]
         private static void SelectBlocksPostfix()
         {
-            if (!Config.Current.EnableBlockFilter)
-                return;
-
             logic.AfterSelectBlocks();
         }
 
