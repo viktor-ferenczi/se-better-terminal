@@ -11,6 +11,7 @@ using VRage.Utils;
 using ClientPlugin.Extensions;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Game.Gui;
+using Sandbox.Game.Multiplayer;
 
 namespace ClientPlugin.Logic
 {
@@ -620,6 +621,7 @@ namespace ClientPlugin.Logic
 
                 var toolbarBuilder = toolbar.GetObjectBuilder();
                 var modified = false;
+                var isServer = Sync.IsServer;
                 
                 foreach (var slotBuilder in toolbarBuilder.Slots)
                 {
@@ -634,10 +636,16 @@ namespace ClientPlugin.Logic
 #endif
                     toolbarItemTerminalGroupBuilder.GroupName = newName;
                     modified = true;
+
+                    if (!isServer)
+                    {
+                        var toolbarItem = MyToolbarItemFactory.CreateToolbarItem(toolbarItemTerminalGroupBuilder);
+                        toolbar.SetItemAtIndex(slotBuilder.Index, toolbarItem);
+                    }
                 }
                 
                 // Re-initialize the toolbar with the modified builder to persist changes
-                if (modified)
+                if (isServer && modified)
                 {
                     toolbar.Init(toolbarBuilder, terminalBlock);
                 }
