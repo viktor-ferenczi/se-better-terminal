@@ -11,6 +11,7 @@ using VRage.Utils;
 using ClientPlugin.Extensions;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Game.Gui;
+using Sandbox.Game.Multiplayer;
 
 namespace ClientPlugin.Logic
 {
@@ -37,7 +38,17 @@ namespace ClientPlugin.Logic
         private readonly Dictionary<long, HashSet<string>> groupsByBlock = new Dictionary<long, HashSet<string>>();
         private readonly Dictionary<string, HashSet<long>> blocksByGroup = new Dictionary<string, HashSet<long>>();
 
-        private object ModeSelectorData => modeSelectorItemData.GetValueOrDefault((int)modeSelectorCombobox.GetSelectedKey(), BlockListMode.Default);
+        private object ModeSelectorData
+        {
+            get
+            {
+                // This happens if EnableBlockFilter is false
+                if (modeSelectorCombobox == null)
+                    return BlockListMode.Default;
+                
+                return modeSelectorItemData.GetValueOrDefault((int)modeSelectorCombobox.GetSelectedKey(), BlockListMode.Default);
+            }
+        }
 
         public ControlPanelLogic(MyTerminalControlPanel controlPanel, IMyGuiControlsParent controlsParent)
         {
@@ -51,10 +62,10 @@ namespace ClientPlugin.Logic
 
         private void PrepareModeSelector(IMyGuiControlsParent controlsParent)
         {
+            blockListbox = (MyGuiControlListbox)controlsParent.Controls.GetControlByName("FunctionalBlockListbox");
+            
             if (blockFilterInitialized || !Config.Current.EnableBlockFilter)
                 return;
-
-            blockListbox = (MyGuiControlListbox)controlsParent.Controls.GetControlByName("FunctionalBlockListbox");
 
             showDefaultNames = false;
 
@@ -176,6 +187,9 @@ namespace ClientPlugin.Logic
 
         public void UpdateModeSelector()
         {
+            if (!Config.Current.EnableBlockFilter)
+                return;
+                
             var previousData = ModeSelectorData;
 
             modeSelectorCombobox.ClearItems();
@@ -270,7 +284,7 @@ namespace ClientPlugin.Logic
 
         public void blockSearch_TextChanged(string text, bool scrollToTop)
         {
-            if (blockListbox == null)
+            if (!Config.Current.EnableBlockFilter)
                 return;
 
             // This is required when "Show all block" is toggled
@@ -518,7 +532,8 @@ namespace ClientPlugin.Logic
             else
                 block.GetTerminalName(itemText);
 
-            item.ToolTip = new MyToolTips(block.GetTooltipText());
+            if (Config.Current.EnableExtendedTooltips)
+                item.ToolTip = new MyToolTips(block.GetTooltipText());
         }
 
         private void OnGroupNameChanged(MyGuiControlTextbox groupNameTextbox)
@@ -535,10 +550,13 @@ namespace ClientPlugin.Logic
 
         public void AfterSelectBlocks()
         {
-            PrepareGroupRenaming();
+            if (Config.Current.EnableGroupRenaming)
+            {
+                PrepareGroupRenaming();
 
-            var currentGroups = controlPanel.m_currentGroups;
-            SetOriginalGroupName(currentGroups.Count == 1 ? currentGroups[0].Name.ToString().Trim() : "");
+                var currentGroups = controlPanel.m_currentGroups;
+                SetOriginalGroupName(currentGroups.Count == 1 ? currentGroups[0].Name.ToString().Trim() : "");
+            }
         }
 
         private void OnRenameGroupButtonClicked(MyGuiControlButton obj)
@@ -558,13 +576,16 @@ namespace ClientPlugin.Logic
             MyLog.Default.Info($"BetterTerminal: Renaming group: {oldName} => {newName}");
 #endif
 
-            // Make sure no group with that new name exists
-            var groupKeyInModeSelector = -1;
-            foreach (var (key, data) in modeSelectorItemData)
+            var terminalSystem = controlPanel.TerminalSystem;
+            if (terminalSystem?.Blocks == null || terminalSystem.BlockGroups == null)
             {
-                if (!(data is MyBlockGroup blockGroup))
-                    continue;
-
+                MyLog.Default.Info("BetterTerminal: controlPanel.TerminalSystem is null or has no Blocks or BlockGroups");
+                return;
+            }
+            
+            // Make sure no group with that new name exists
+            foreach (var blockGroup in terminalSystem.BlockGroups)
+            {
                 var existingGroupName = blockGroup.Name.ToString();
                 if (existingGroupName == newName)
                 {
@@ -574,26 +595,15 @@ namespace ClientPlugin.Logic
                             messageCaption: new StringBuilder("Better Terminal: Error")));
                     return;
                 }
-
-                if (existingGroupName == oldName)
-                {
-                    groupKeyInModeSelector = key;
-                }
-            }
-
-            if (groupKeyInModeSelector < 0)
-            {
-                MyLog.Default.Warning($"BetterTerminal: Cannot find existing group to rename: {oldName}");
-                return;
             }
 
 #if DEBUG
-            MyLog.Default.Info($"BetterTerminal: Good, there is no colliding group");
+            MyLog.Default.Info("BetterTerminal: Good, there is no colliding group");
 #endif
 
             // Create a group with the new name, so it will contain the same blocks as the old group
 #if DEBUG
-            MyLog.Default.Info($"BetterTerminal: Saving as new group: {oldName}");
+            MyLog.Default.Info($"BetterTerminal: Saving as new group: {newName}");
 #endif
             controlPanel.groupSave_ButtonClicked(null);
             if (controlPanel.m_currentGroups.Count != 1 || controlPanel.m_currentGroups[0].Name.ToString() != newName)
@@ -603,16 +613,16 @@ namespace ClientPlugin.Logic
             }
 
             // Redirect references in block toolbar slots to the new group
-            foreach (var blockListitem in blockListbox.Items)
+            foreach (var terminalBlock in terminalSystem.Blocks)
             {
-                if (!(blockListitem.UserData is MyTerminalBlock terminalBlock))
-                    continue;
-
                 var toolbar = terminalBlock.GetToolbar();
                 if (toolbar == null)
                     continue;
 
                 var toolbarBuilder = toolbar.GetObjectBuilder();
+                var modified = false;
+                var isServer = Sync.IsServer;
+                
                 foreach (var slotBuilder in toolbarBuilder.Slots)
                 {
                     if (!(slotBuilder.Data is MyObjectBuilder_ToolbarItemTerminalGroup toolbarItemTerminalGroupBuilder))
@@ -625,7 +635,19 @@ namespace ClientPlugin.Logic
                     MyLog.Default.Info($"BetterTerminal: Redirecting group in toolbar slot {slotBuilder.Index} of {terminalBlock.GetDebugName()}");
 #endif
                     toolbarItemTerminalGroupBuilder.GroupName = newName;
-                    toolbar.SetItemAtSlot(slotBuilder.Index, MyToolbarItemFactory.CreateToolbarItem(toolbarItemTerminalGroupBuilder));
+                    modified = true;
+
+                    if (!isServer)
+                    {
+                        var toolbarItem = MyToolbarItemFactory.CreateToolbarItem(toolbarItemTerminalGroupBuilder);
+                        toolbar.SetItemAtIndex(slotBuilder.Index, toolbarItem);
+                    }
+                }
+                
+                // Re-initialize the toolbar with the modified builder to persist changes
+                if (isServer && modified)
+                {
+                    toolbar.Init(toolbarBuilder, terminalBlock);
                 }
             }
 
@@ -640,8 +662,10 @@ namespace ClientPlugin.Logic
 #endif
 
             controlPanel.RefreshBlockList();
+            
+            // Select the new group in the terminal list 
+            // blockListbox is available only if EnableBlockFilter is true
             blockSearch_TextChanged(controlPanel.m_searchBox.SearchText, true);
-
             foreach (var item in blockListbox.Items)
             {
                 if (item.UserData is MyBlockGroup group && group.Name.ToString() == newName)

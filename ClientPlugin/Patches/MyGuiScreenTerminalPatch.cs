@@ -79,7 +79,7 @@ namespace ClientPlugin.Patches
         [HarmonyPatch(nameof(MyGuiScreenTerminal.AttachGroups))]
         public static void AttachGroupsPostfix(MyGuiControls parent)
         {
-            if (!Config.Current.EnableBlockFilter)
+            if (!Config.Current.EnableGroupRenaming)
                 return;
 
             parent.Add(ControlPanelLogic.RenameGroupButton);
@@ -90,7 +90,7 @@ namespace ClientPlugin.Patches
         [HarmonyPatch(nameof(MyGuiScreenTerminal.DetachGroups))]
         public static void DetachGroupsPostfix(MyGuiControls parent)
         {
-            if (!Config.Current.EnableBlockFilter)
+            if (!Config.Current.EnableGroupRenaming)
                 return;
 
             parent.Remove(ControlPanelLogic.RenameGroupButton);

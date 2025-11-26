@@ -51,5 +51,13 @@ namespace ClientPlugin
             get => enableBlockFilter;
             set => SetField(ref enableBlockFilter, value);
         }
+
+        private bool enableExtendedTooltips = true;
+        [Checkbox(description: "Show extended tooltips over blocks")]
+        public bool EnableExtendedTooltips
+        {
+            get => enableExtendedTooltips;
+            set => SetField(ref enableExtendedTooltips, value);
+        }
     }
 }
