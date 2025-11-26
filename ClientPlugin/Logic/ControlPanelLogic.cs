@@ -531,7 +531,8 @@ namespace ClientPlugin.Logic
             else
                 block.GetTerminalName(itemText);
 
-            item.ToolTip = new MyToolTips(block.GetTooltipText());
+            if (Config.Current.EnableExtendedTooltips)
+                item.ToolTip = new MyToolTips(block.GetTooltipText());
         }
 
         private void OnGroupNameChanged(MyGuiControlTextbox groupNameTextbox)
