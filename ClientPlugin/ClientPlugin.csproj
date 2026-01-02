@@ -105,10 +105,10 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="deploy.bat" />
-    <Content Include="Patches\MyTerminalControlPanelPatch.PopulateBlockListTranspiler.Net4.original.il" />
-    <Content Include="Patches\MyTerminalControlPanelPatch.PopulateBlockListTranspiler.Net4.patched.il" />
-    <Content Include="Patches\MyTerminalControlPanelPatch.UpdateItemAppearanceTranspiler.Net4.original.il" />
-    <Content Include="Patches\MyTerminalControlPanelPatch.UpdateItemAppearanceTranspiler.Net4.patched.il" />
+    <Content Include="Patches\MyTerminalControlPanel.PopulateBlockList.original.il" />
+    <Content Include="Patches\MyTerminalControlPanel.PopulateBlockList.patched.il" />
+    <Content Include="Patches\MyTerminalControlPanel.UpdateItemAppearance.original.il" />
+    <Content Include="Patches\MyTerminalControlPanel.UpdateItemAppearance.patched.il" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

@@ -149,7 +149,7 @@ namespace ClientPlugin.Patches
         {
             var il = code.ToList();
             il.RecordOriginalCode(patchedMethod);
-            il.VerifyCodeHash(patchedMethod, "60c4cb3b");
+            il.VerifyCodeHash(patchedMethod, "c3da4457");
 
             // We replace the code between these two lines:
             // this.m_blockListbox.IsInBulkInsert = true;
@@ -188,7 +188,7 @@ namespace ClientPlugin.Patches
         {
             var il = code.ToList();
             il.RecordOriginalCode(patchedMethod);
-            il.VerifyCodeHash(patchedMethod, "378bbed9");
+            il.VerifyCodeHash(patchedMethod, "b41c5b45");
             
             // Replace this statement:
             // block.GetTerminalName(item.Text);
