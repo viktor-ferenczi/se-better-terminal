@@ -1,31 +1,34 @@
 <?xml version="1.0"?>
 <PluginData xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="GitHubPlugin">
   <Id>viktor-ferenczi/se-better-terminal</Id>
+  <RepoId>viktor-ferenczi/se-better-terminal</RepoId>
+
   <FriendlyName>Better Terminal</FriendlyName>
   <Author>Viktor</Author>
+
   <Tooltip>Terminal UI improvements: Group renaming, block filter, show default block names.</Tooltip>
   <Description>Terminal UI improvements
-- Group renaming
-- Block filter
-- Show default block names
+    - Group renaming
+    - Block filter
+    - Show default block names
 
-Please see the full documentation on GitHub:
-https://github.com/viktor-ferenczi/se-better-terminal
+    Please see the full documentation on GitHub:
+    https://github.com/viktor-ferenczi/se-better-terminal
 
-Please consider supporting my work:
-- Patreon: https://www.patreon.com/semods
-- PayPal: https://www.paypal.com/paypalme/vferenczi/
+    Please consider supporting my work:
+    - Patreon: https://www.patreon.com/semods
+    - PayPal: https://www.paypal.com/paypalme/vferenczi/
 
-Bug reporting channel: #bug-reports
-SE Mods Discord https://discord.gg/PYPFPGf3Ca
+    Bug reporting channel: #bug-reports
+    SE Mods Discord https://discord.gg/PYPFPGf3Ca
 
-Enjoy!
-</Description>
+    Enjoy!
+  </Description>
 
   <SourceDirectories>
     <Directory>ClientPlugin</Directory>
   </SourceDirectories>
 
-  <Commit>f8aae2779414703d65617bf4cfb27977773e1d8e</Commit>
+  <Commit>105a3e805a40162fd1c3cec4b8e437c9bd156678</Commit>
 
 </PluginData>
