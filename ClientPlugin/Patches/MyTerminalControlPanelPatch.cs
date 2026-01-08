@@ -145,11 +145,11 @@ namespace ClientPlugin.Patches
 
         [HarmonyTranspiler]
         [HarmonyPatch(nameof(MyTerminalControlPanel.PopulateBlockList))]
-        private static IEnumerable<CodeInstruction> PopulateBlockListTranspiler(IEnumerable<CodeInstruction> code)
+        private static IEnumerable<CodeInstruction> PopulateBlockListTranspiler(IEnumerable<CodeInstruction> code, MethodBase patchedMethod)
         {
             var il = code.ToList();
-            il.RecordOriginalCode();
-            il.VerifyCodeHash("60c4cb3b");
+            il.RecordOriginalCode(patchedMethod);
+            il.VerifyCodeHash(patchedMethod, "c3da4457");
 
             // We replace the code between these two lines:
             // this.m_blockListbox.IsInBulkInsert = true;
@@ -169,7 +169,7 @@ namespace ClientPlugin.Patches
             var methodInfo = AccessTools.DeclaredMethod(typeof(MyTerminalControlPanelPatch), nameof(PopulateBlockList_AddBlocks));
             il.Insert(i, new CodeInstruction(OpCodes.Call, methodInfo));
 
-            il.RecordPatchedCode();
+            il.RecordPatchedCode(patchedMethod);
             return il;
         }
 
@@ -184,11 +184,11 @@ namespace ClientPlugin.Patches
 
         [HarmonyTranspiler]
         [HarmonyPatch(nameof(MyTerminalControlPanel.UpdateItemAppearance))]
-        private static IEnumerable<CodeInstruction> UpdateItemAppearanceTranspiler(IEnumerable<CodeInstruction> code)
+        private static IEnumerable<CodeInstruction> UpdateItemAppearanceTranspiler(IEnumerable<CodeInstruction> code, MethodBase patchedMethod)
         {
             var il = code.ToList();
-            il.RecordOriginalCode();
-            il.VerifyCodeHash("378bbed9");
+            il.RecordOriginalCode(patchedMethod);
+            il.VerifyCodeHash(patchedMethod, "b41c5b45");
             
             // Replace this statement:
             // block.GetTerminalName(item.Text);
@@ -204,7 +204,7 @@ namespace ClientPlugin.Patches
             var methodInfo = AccessTools.DeclaredMethod(typeof(MyTerminalControlPanelPatch), nameof(UpdateItemAppearance_DefaultNameImplementation));
             il.Insert(i, new CodeInstruction(OpCodes.Call, methodInfo));
 
-            il.RecordPatchedCode();
+            il.RecordPatchedCode(patchedMethod);
             return il;
         }
 

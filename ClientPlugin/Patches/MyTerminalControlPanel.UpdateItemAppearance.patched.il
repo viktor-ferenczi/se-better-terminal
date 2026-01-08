@@ -1,12 +1,11 @@
-// 378bbed9
+// fd3adc92
 ldarg.2
 callvirt System.Text.StringBuilder Sandbox.Graphics.GUI.Item::get_Text()
 callvirt System.Text.StringBuilder System.Text.StringBuilder::Clear()
 pop
 ldarg.1
 ldarg.2
-callvirt System.Text.StringBuilder Sandbox.Graphics.GUI.Item::get_Text()
-callvirt virtual System.Void Sandbox.Game.Entities.Cube.MyTerminalBlock::GetTerminalName(System.Text.StringBuilder result)
+call static System.Void ClientPlugin.Patches.MyTerminalControlPanelPatch::UpdateItemAppearance_DefaultNameImplementation(Sandbox.Game.Entities.Cube.MyTerminalBlock block, Sandbox.Graphics.GUI.Item item)
 ldarg.1
 callvirt virtual System.Boolean Sandbox.Game.Entities.MyCubeBlock::get_IsFunctional()
 brtrue.s L0
