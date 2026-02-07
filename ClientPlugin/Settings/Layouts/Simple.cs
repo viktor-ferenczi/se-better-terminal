@@ -2,110 +2,107 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ClientPlugin.Settings.Elements;
 using VRage.Utils;
 using VRageMath;
 
-namespace ClientPlugin.Settings.Layouts
+namespace ClientPlugin.Settings.Layouts;
+
+internal class Simple : Layout
 {
-    internal class Simple : Layout
+    private MyGuiControlParent parent;
+    private MyGuiControlScrollablePanel scrollPanel;
+
+    public override Vector2 SettingsPanelSize => new Vector2(0.5f, 0.7f);
+    private const float ElementPadding = 0.01f;
+
+    public Simple(Func<List<List<Control>>> getControls) : base(getControls) { }
+
+    public override List<MyGuiControlBase> RecreateControls()
     {
-        private MyGuiControlParent Parent;
-        private MyGuiControlScrollablePanel ScrollPanel;
-
-        public override Vector2 ScreenSize => new Vector2(0.4f, 0.7f);
-        private const float ElementPadding = 0.01f;
-        private static float Subdivide(int index, int total, float length)
+        parent = new MyGuiControlParent()
         {
-            return length / (total - 1) * index;
-        }
+            OriginAlign = MyGuiDrawAlignEnum.HORISONTAL_CENTER_AND_VERTICAL_TOP,
+            Position = Vector2.Zero, 
+            Size = new Vector2(SettingsPanelSize.X-0.01f, SettingsPanelSize.Y-0.09f),
+        };
 
-
-        public Simple(Func<List<List<MyGuiControlBase>>> getControls) : base(getControls) { }
-
-        public override List<MyGuiControlBase> RecreateControls()
+        scrollPanel = new MyGuiControlScrollablePanel(parent)
         {
-            Parent = new MyGuiControlParent()
-            {
-                OriginAlign = MyGuiDrawAlignEnum.HORISONTAL_RIGHT_AND_VERTICAL_BOTTOM,
-                Position = 0.5f * ScreenSize,
-                Size = new Vector2(ScreenSize.X-0.01f, ScreenSize.Y-0.09f),
-            };
+            BackgroundTexture = null,
+            BorderHighlightEnabled = false,
+            BorderEnabled = false,
+            OriginAlign = MyGuiDrawAlignEnum.HORISONTAL_CENTER_AND_VERTICAL_CENTER,
+            Position = new Vector2(0f, 0.03f), // Do not overlap the dialog's title
+            Size = parent.Size,
+            ScrollbarVEnabled = true,
+            CanFocusChildren = true,
+            ScrolledAreaPadding = new MyGuiBorderThickness(0.005f),
+            DrawScrollBarSeparator = true,
+        };
 
-            ScrollPanel = new MyGuiControlScrollablePanel(Parent)
+        foreach (var row in GetControls())
+        {
+            foreach (var control in row)
             {
-                BackgroundTexture = null,
-                BorderHighlightEnabled = false,
-                BorderEnabled = false,
-                OriginAlign = MyGuiDrawAlignEnum.HORISONTAL_RIGHT_AND_VERTICAL_BOTTOM,
-                Position = 0.5f * ScreenSize,
-                Size = Parent.Size,
-                ScrollbarVEnabled = true,
-                CanFocusChildren = true,
-                ScrolledAreaPadding = new MyGuiBorderThickness(0.005f),
-                DrawScrollBarSeparator = true,
-            };
-
-            foreach (var row in GetControls())
-            {
-                foreach (var element in row)
-                {
-                    Parent.Controls.Add(element);
-                }
+                parent.Controls.Add(control.GuiControl);
             }
-
-            return new List<MyGuiControlBase> { ScrollPanel };
         }
 
-        public override void LayoutControls()
-        {
-            var controls = GetControls();
-            for (int rowIndex = 0; rowIndex < controls.Count; rowIndex++)
-            {
-                var row = controls[rowIndex];
-                float rowHeight = row.Max(x => x.Size.Y);
+        return new List<MyGuiControlBase> { scrollPanel };
+    }
 
-                float rowY;
-                if (rowIndex == 0)
+    public override void LayoutControls()
+    {
+        var totalWidth = scrollPanel.ScrolledAreaSize.X - 2 * ElementPadding;
+            
+        var controls = GetControls();
+        var totalHeight = ElementPadding + controls.Select(row => row.Max(c => c.GuiControl.Size.Y) + ElementPadding).Sum();
+        parent.Size = new Vector2(parent.Size.X, totalHeight);
+            
+        var rowY = -0.5f * totalHeight + ElementPadding;
+        foreach (var row in controls)
+        {
+            // Vertical
+                
+            var rowHeight = row.Max(c => c.GuiControl.Size.Y);
+            var controlY = rowY + 0.5f * rowHeight;
+                
+            rowY += rowHeight + ElementPadding;
+                
+            // Horizontal
+                
+            var totalMinWidth = row.Select(c => (c.FixedWidth ?? c.MinWidth) + c.RightMargin).Sum();
+            var remainingWidth = Math.Max(0f, totalWidth - totalMinWidth);
+            var sumFillFactors = row.Select(c => c.FixedWidth.HasValue ? 0f : c.FillFactor ?? 0f).Sum();
+            var unitWidth = sumFillFactors > 0f ? remainingWidth / sumFillFactors : 0f;
+
+            var controlX = -0.5f * parent.Size.X + ElementPadding;
+            foreach (var control in row)
+            {
+                var guiControl = control.GuiControl;
+                guiControl.Position = new Vector2(controlX, controlY) + control.Offset;
+                guiControl.OriginAlign = control.OriginAlign;
+
+                var sizeY = guiControl.Size.Y;
+                if (control.FixedWidth.HasValue)
                 {
-                    rowY = -0.5f * ScrollPanel.Size.Y + 0.5f * rowHeight;
+                    guiControl.Size = new Vector2(control.FixedWidth.Value, sizeY);
+                    guiControl.SetMaxWidth(control.FixedWidth.Value);
                 }
+                else if (control.FillFactor.HasValue)
+                {
+                    guiControl.Size = new Vector2(Math.Max(control.MinWidth, unitWidth * control.FillFactor.Value), sizeY);
+                } 
                 else
                 {
-                    var oldRow = controls[rowIndex - 1];
-                    float oldRowY = oldRow.First().PositionY;
-                    float oldRowHeight = oldRow.Max(x => x.Size.Y);
-                    float oldRowEnd = oldRowY + 0.5f * oldRowHeight;
-                    rowY = oldRowEnd + ElementPadding + 0.5f * rowHeight;
+                    guiControl.Size = new Vector2(Math.Max(guiControl.Size.X, control.MinWidth), sizeY);
                 }
 
-                for (int elementIndex = 0; elementIndex < row.Count; elementIndex++)
-                {
-                    var element = row[elementIndex];
-
-                    float elementX = -0.5f * ScrollPanel.Size.X;
-                    if (row.Count > 1)
-                    {
-                        elementX += Subdivide(elementIndex, row.Count, ScrollPanel.ScrolledAreaSize.X);
-                    }
-
-                    element.Position = new Vector2(elementX, rowY);
-
-                    if (elementIndex == 0)
-                    {
-                        element.OriginAlign = MyGuiDrawAlignEnum.HORISONTAL_LEFT_AND_VERTICAL_CENTER;
-                    }
-                    else if (elementIndex == row.Count - 1)
-                    {
-                        element.OriginAlign = MyGuiDrawAlignEnum.HORISONTAL_RIGHT_AND_VERTICAL_CENTER;
-                    }
-                    else
-                    {
-                        element.OriginAlign = MyGuiDrawAlignEnum.HORISONTAL_CENTER_AND_VERTICAL_CENTER;
-                    }
-
-                    element.SetMaxWidth(ScrollPanel.ScrolledAreaSize.X / row.Count);
-                }
+                controlX += guiControl.Size.X + control.RightMargin;
             }
         }
+            
+        scrollPanel.RefreshInternals();
     }
 }

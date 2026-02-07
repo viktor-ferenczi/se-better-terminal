@@ -11,11 +11,11 @@ Please consider supporting my work on [Patreon](https://www.patreon.com/semods) 
 ## Prerequisites
 
 - [Space Engineers](https://store.steampowered.com/app/244850/Space_Engineers/)
-- [Plugin Loader](https://github.com/sepluginloader/SpaceEngineersLauncher)
+- [Pulsar](https://github.com/SpaceGT/Pulsar)
 
 ## Installation
 
-1. Install Plugin Loader's [Space Engineers Launcher](https://github.com/sepluginloader/SpaceEngineersLauncher)
+1. Install Pulsar's [Space Engineers Launcher](https://github.com/sepluginloader/SpaceEngineersLauncher)
 2. Run the game
 3. In the new **Plugins** menu add the "Better Terminal" plugin
 4. Apply and restart the game as requested
@@ -69,7 +69,7 @@ _The default name checkbox is cleared each time you open the Terminal UI to prev
 Press `Ctrl-Alt-/` while in-game and not in the GUI. It will open the list of
 configurable plugins. Select **Better Terminal** from the list to configure this plugin.
 Alternatively you can open the settings by double-clicking on this plugin in the Plugins
-dialog of Plugin Loader, then clicking **Settings** in the dialog opened.
+dialog of Pulsar, then clicking **Settings** in the dialog opened.
 
 The configuration allows for setting a default search text, which is useful if you work
 with on blocks and groups with a common part in their name, for example the ship's or
@@ -87,9 +87,8 @@ on GitHub or report the issue in the `#bug-reports` channel of the [SE Mods Disc
 ## Want to know more?
 
 - [SE Mods Discord](https://discord.gg/PYPFPGf3Ca) FAQ, Troubleshooting, Support, Bug Reports, Discussion
-- [Plugin Loader Discord](https://discord.gg/6ETGRU3CzR) Everything about plugins
-- [YouTube Channel](https://www.youtube.com/channel/UCc5ar3cW9qoOgdBb1FM_rxQ)
-- [Source code](https://github.com/viktor-ferenczi/toolbar-manager)
+- [Pulsar Discord](https://discord.gg/z8ZczP2YZY) Everything about plugins
+- [Source code](https://github.com/viktor-ferenczi/se-better-terminal)
 - [Bug reports](https://discord.gg/x3Z8Ug5YkQ)
 
 ## Credits
@@ -125,6 +124,7 @@ _in alphabetical order_
 - Unruly
 
 ### Creators
+- Space - Pulsar
 - avaness - Plugin Loader
 - Fred XVI - Racing maps
 - Kamikaze - M&M mod
