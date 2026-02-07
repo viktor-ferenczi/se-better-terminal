@@ -5,6 +5,8 @@ using Sandbox.Game.Gui;
 using Sandbox.Game.Screens.Helpers;
 using Sandbox.Graphics.GUI;
 using VRage.Game;
+using VRage.Game.ModAPI;
+using VRage.Input;
 using VRage.Utils;
 using VRageMath;
 
@@ -82,7 +84,8 @@ namespace ClientPlugin.Patches
             if (!Config.Current.EnableGroupRenaming)
                 return;
 
-            parent.Add(ControlPanelLogic.RenameGroupButton);
+            if (ControlPanelLogic.RenameGroupButton != null)
+                parent.Add(ControlPanelLogic.RenameGroupButton);
         }
 
         // ReSharper disable once UnusedMember.Global
@@ -93,7 +96,33 @@ namespace ClientPlugin.Patches
             if (!Config.Current.EnableGroupRenaming)
                 return;
 
-            parent.Remove(ControlPanelLogic.RenameGroupButton);
+            if (ControlPanelLogic.RenameGroupButton != null)
+                parent.Remove(ControlPanelLogic.RenameGroupButton);
+        }
+
+        // ReSharper disable once UnusedMember.Global
+        // ReSharper disable once InconsistentNaming
+        [HarmonyPostfix]
+        [HarmonyPatch("HandleInput")]
+        public static void HandleInputPostfix(MyGuiScreenTerminal __instance)
+        {
+            if (!Config.Current.EnableContextMenu && Config.Current.DoubleClickAction == DoubleClickAction.None)
+                return;
+
+            // Only handle input when on the Control Panel tab
+            if (MyGuiScreenTerminal.GetCurrentScreen() != MyTerminalPageEnum.ControlPanel)
+                return;
+
+            // Phase 1: On right-click press, prepare the context menu
+            MyTerminalControlPanelPatch.HandleBlockListInput();
+
+            // Phase 2: On right-click release, activate the prepared context menu
+            // Following the G menu pattern (MyGuiScreenToolbarConfigBase.HandleInput)
+            if (Config.Current.EnableContextMenu &&
+                MyInput.Static.IsMouseReleased(MyMouseButtonsEnum.Right))
+            {
+                MyTerminalControlPanelPatch.ActivateContextMenu(__instance);
+            }
         }
     }
 }
