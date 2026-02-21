@@ -32,7 +32,7 @@ Select the group to rename, edit the name in the group name text box, then click
 Any block toolbars referencing the group will be updated automatically, 
 so there will be no broken slots.
 
-![Block group renaming](doc/BlockRenaming.png "Rename Group")
+![Block group renaming](Docs/BlockRenaming.png "Rename Group")
 
 #### Block filter
 
@@ -46,7 +46,7 @@ except of fixing the bug with initial scroll position of the block list.
 _The block filter is reset to default mode each time you open
 the Terminal UI to prevent confusion._
 
-![Block filters](doc/BlockFilters.png "Block Filters")
+![Block filters](Docs/BlockFilters.png "Block Filters")
 
 #### Default block names
 
@@ -62,7 +62,7 @@ blocks in the list.
 
 _The default name checkbox is cleared each time you open the Terminal UI to prevent confusion._
 
-![Show/hide default block names](doc/DefaultBlockNames.png "Show/Hide Default Block Names")
+![Show/hide default block names](Docs/DefaultBlockNames.png "Show/Hide Default Block Names")
 
 #### Block context menu
 
@@ -79,7 +79,7 @@ The menu can include (each item can be toggled individually in the configuration
 - **Block actions** — all relevant terminal actions for the block, sorted alphabetically. Only the actions that make sense for the block's current state are shown (e.g. "Turn On" is hidden when the block is already on).
 - **Toggles** — additional on/off properties exposed by the block or its mods.
 
-![Block context menu](doc/BlockContextMenu.png "Block context menu")
+![Block context menu](Docs/BlockContextMenu.png "Block context menu")
 
 #### Double-click action
 
@@ -130,7 +130,7 @@ The configuration allows for:
 
 The configuration can be changed at any time without restarting the game.
 
-![Configuration](doc/ConfigDialog.png "Config Dialog")
+![Configuration](Docs/ConfigDialog.png "Config Dialog")
 
 ## Troubleshooting
 
