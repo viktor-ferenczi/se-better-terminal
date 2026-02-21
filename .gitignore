@@ -360,3 +360,6 @@ MigrationBackup/
 
 # JetBrains Rider project files
 /.idea/
+
+# Claude Code
+.claude

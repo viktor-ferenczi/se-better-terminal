@@ -12,6 +12,10 @@ using ClientPlugin.Extensions;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Game.Gui;
 using Sandbox.Game.Multiplayer;
+using Sandbox.Graphics;
+using Sandbox.ModAPI;
+using VRage.Input;
+using VRageMath;
 
 namespace ClientPlugin.Logic
 {
@@ -38,6 +42,14 @@ namespace ClientPlugin.Logic
         private readonly Dictionary<long, HashSet<string>> groupsByBlock = new Dictionary<long, HashSet<string>>();
         private readonly Dictionary<string, HashSet<long>> blocksByGroup = new Dictionary<string, HashSet<long>>();
 
+        // Context menu support
+        private ContextMenuLogic contextMenuLogic;
+
+        // Double-click detection
+        private Vector2 doubleClickFirstPosition;
+        private int? doubleClickStarted;
+        private MyTerminalBlock doubleClickBlock;
+
         private object ModeSelectorData
         {
             get
@@ -58,6 +70,16 @@ namespace ClientPlugin.Logic
             this.controlPanel = controlPanel;
 
             PrepareModeSelector(controlsParent);
+            
+            if (Config.Current.EnableContextMenu)
+            {
+                contextMenuLogic = new ContextMenuLogic(controlPanel);
+            }
+        }
+
+        public void CreateContextMenu(MyGuiControls screenControls)
+        {
+            contextMenuLogic?.CreateContextMenu(screenControls);
         }
 
         private void PrepareModeSelector(IMyGuiControlsParent controlsParent)
@@ -130,6 +152,12 @@ namespace ClientPlugin.Logic
                 controlPanel.m_groupName.TextChanged -= OnGroupNameChanged;
                 RenameGroupButton = null;
                 groupRenamingInitialized = false;
+            }
+
+            if (contextMenuLogic != null)
+            {
+                contextMenuLogic.Close();
+                contextMenuLogic = null;
             }
         }
 
@@ -692,6 +720,112 @@ namespace ClientPlugin.Logic
 
             controlPanel.m_searchBox.SearchText = searchText;
             controlPanel.blockSearch_TextChanged(searchText);
+        }
+
+        public void HandleBlockListInput()
+        {
+            if (!Config.Current.EnableContextMenu && Config.Current.DoubleClickAction == DoubleClickAction.None)
+                return;
+
+            if (blockListbox == null || !blockListbox.IsMouseOver)
+                return;
+
+            // Check double-click timeout
+            if (doubleClickStarted.HasValue && 
+                (MyGuiManager.TotalTimeInMilliseconds - doubleClickStarted.Value) >= 500)
+            {
+                doubleClickStarted = null;
+                doubleClickBlock = null;
+            }
+
+            // Get the item under mouse cursor
+            var item = blockListbox.MouseOverItem;
+            if (item?.UserData is not MyTerminalBlock block)
+                return;
+
+            // Phase 1: On right-click press, prepare the context menu (populate it and mark as pending)
+            if (Config.Current.EnableContextMenu && 
+                MyInput.Static.IsNewMousePressed(MyMouseButtonsEnum.Right))
+            {
+                contextMenuLogic?.PrepareContextMenu(block);
+            }
+
+            // Handle double-click detection
+            if (Config.Current.DoubleClickAction != DoubleClickAction.None && 
+                MyInput.Static.IsNewPrimaryButtonPressed())
+            {
+                HandleDoubleClick(block);
+            }
+        }
+
+        public void ActivateContextMenu(MyGuiScreenBase screen)
+        {
+            contextMenuLogic?.ActivateContextMenu(screen);
+        }
+
+        public bool IsContextMenuActive => contextMenuLogic?.IsContextMenuActive ?? false;
+
+        public bool ShouldSuppressTooltip(MyGuiControlListbox listbox)
+        {
+            return listbox == blockListbox && IsContextMenuActive;
+        }
+
+        private void HandleDoubleClick(MyTerminalBlock block)
+        {
+            if (!doubleClickStarted.HasValue)
+            {
+                // First click
+                doubleClickStarted = MyGuiManager.TotalTimeInMilliseconds;
+                doubleClickFirstPosition = MyGuiManager.MouseCursorPosition;
+                doubleClickBlock = block;
+            }
+            else if (doubleClickBlock == block &&
+                     (MyGuiManager.TotalTimeInMilliseconds - doubleClickStarted.Value) <= 500 &&
+                     (doubleClickFirstPosition - MyGuiManager.MouseCursorPosition).Length() <= 0.005f)
+            {
+                // Second click within timeout and close to original position on same block
+                ExecuteDoubleClickAction(block);
+                doubleClickStarted = null;
+                doubleClickBlock = null;
+            }
+            else
+            {
+                // Reset if different block or too far
+                doubleClickStarted = MyGuiManager.TotalTimeInMilliseconds;
+                doubleClickFirstPosition = MyGuiManager.MouseCursorPosition;
+                doubleClickBlock = block;
+            }
+        }
+
+        private void ExecuteDoubleClickAction(MyTerminalBlock block)
+        {
+            var modApiBlock = block as IMyTerminalBlock;
+            if (modApiBlock == null)
+                return;
+
+            switch (Config.Current.DoubleClickAction)
+            {
+                case DoubleClickAction.None:
+                    // Do nothing
+                    break;
+
+                case DoubleClickAction.OpenInventory:
+                    ContextMenuLogic.OpenInventory(block);
+                    break;
+
+                case DoubleClickAction.ToggleOnOff:
+                    if (modApiBlock is IMyFunctionalBlock functionalBlock)
+                        functionalBlock.Enabled = !functionalBlock.Enabled;
+                    break;
+
+                case DoubleClickAction.ToggleShowOnHud:
+                    modApiBlock.ShowOnHUD = !modApiBlock.ShowOnHUD;
+                    break;
+
+                case DoubleClickAction.ToggleTerminal:
+                    modApiBlock.ShowInTerminal = !modApiBlock.ShowInTerminal;
+                    break;
+            }
         }
     }
 }

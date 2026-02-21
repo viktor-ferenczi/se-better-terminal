@@ -36,7 +36,7 @@ namespace ClientPlugin.Patches
 
         [HarmonyPostfix]
         [HarmonyPatch(nameof(MyTerminalControlPanel.Init))]
-        private static void InitPostfix()
+        private static void InitPostfix(MyTerminalControlPanel __instance)
         {
             if (Config.Current.EnableBlockFilter)
             {
@@ -44,6 +44,16 @@ namespace ClientPlugin.Patches
             }
 
             logic.SetSearchText(Config.Current.DefaultSearchText);
+
+            if (Config.Current.EnableContextMenu)
+            {
+                // The context menu must be added to the screen's Controls (not to a tab page)
+                // so that its HandleInput is called by the framework and it renders correctly.
+                // m_terminalScreen is set before Init, so it's safe to access here.
+                var screenControls = __instance.m_terminalScreen?.Controls;
+                if (screenControls != null)
+                    logic.CreateContextMenu(screenControls);
+            }
         }
 
         #region Groups
@@ -92,7 +102,7 @@ namespace ClientPlugin.Patches
         [HarmonyPatch("SelectBlocks", new Type[0])]
         private static void SelectBlocksPostfix()
         {
-            logic.AfterSelectBlocks();
+            logic?.AfterSelectBlocks();
         }
 
         #endregion Groups
@@ -124,10 +134,11 @@ namespace ClientPlugin.Patches
         [HarmonyPatch(nameof(MyTerminalControlPanel.Close))]
         private static bool ClosePrefix()
         {
-            if (!Config.Current.EnableBlockFilter && logic != null)
+            if (logic != null)
             {
-                logic.Close();
+                var l = logic;
                 logic = null;
+                l.Close();
             }
             return true;
         }
@@ -212,6 +223,23 @@ namespace ClientPlugin.Patches
         {
             // Config condition is inside
             logic.UpdateItemAppearance_DefaultNameImplementation(block, item);
+        }
+
+        public static void HandleBlockListInput()
+        {
+            logic?.HandleBlockListInput();
+        }
+
+        public static void ActivateContextMenu(MyGuiScreenBase screen)
+        {
+            logic?.ActivateContextMenu(screen);
+        }
+
+        public static bool IsContextMenuActive => logic?.IsContextMenuActive ?? false;
+
+        public static bool ShouldSuppressTooltip(MyGuiControlListbox listbox)
+        {
+            return logic?.ShouldSuppressTooltip(listbox) ?? false;
         }
 
         #endregion
