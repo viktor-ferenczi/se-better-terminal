@@ -64,6 +64,56 @@ _The default name checkbox is cleared each time you open the Terminal UI to prev
 
 ![Show/hide default block names](doc/DefaultBlockNames.png "Show/Hide Default Block Names")
 
+#### Block context menu
+
+**Right-clicking** a block in the Terminal list opens a **context menu** with quick actions
+for that block, without having to scroll through its settings panel.
+
+The menu can include (each item can be toggled individually in the configuration):
+
+- **Open Inventory** — switch straight to the inventory screen for this block _(blocks with inventory only)_
+- **Turn ON / Turn OFF** — toggle the block on or off _(functional blocks only)_
+- **Show in Terminal / Hide from Terminal** — control whether the block appears in the list
+- **Show on HUD / Hide from HUD** — toggle the block's HUD marker
+- **Enable / Disable Use Conveyor** — toggle conveyor connection _(reactors, refineries, gas generators, etc.)_
+- **Block actions** — all relevant terminal actions for the block, sorted alphabetically. Only the actions that make sense for the block's current state are shown (e.g. "Turn On" is hidden when the block is already on).
+- **Toggles** — additional on/off properties exposed by the block or its mods.
+
+![Block context menu](doc/BlockContextMenu.png "Block context menu")
+
+#### Double-click action
+
+You can configure a **double-click shortcut** that triggers whenever you double-click a block
+in the Terminal list. Available actions:
+
+| Setting | What happens |
+|---|---|
+| None _(default)_ | No action |
+| Open Inventory | Opens the inventory screen for that block |
+| Toggle ON/OFF | Turns the block on or off |
+| Toggle Show on HUD | Toggles the block's HUD marker |
+| Toggle Terminal | Shows or hides the block in the Terminal list |
+
+The double-click action is configured in the plugin settings (see [Configuration](#configuration) below).
+
+<!-- TODO: add screenshot of the double-click setting in the config dialog -->
+
+#### Faster list editing with double-click
+
+Several block-specific terminal panels now support **double-clicking items** in their lists as a
+shortcut for the most common action, instead of having to click the item and then press a button:
+
+| Block | List | Double-click does |
+|---|---|---|
+| **Conveyor Sorter** | Available filters | Adds the item to active filters |
+| **Conveyor Sorter** | Active filters | Removes the item |
+| **Jump Drive** | GPS entries / Beacons | Selects the entry as jump target |
+| **Jump Drive** | Selected target | Removes the selected target |
+| **Event Controller** | Available blocks | Adds the block to the selection |
+| **Event Controller** | Selected blocks | Removes the block |
+| **Turret Control Block** | Available tools | Adds the tool to the selection |
+| **Turret Control Block** | Selected tools | Removes the tool |
+
 ## Configuration
 
 Press `Ctrl-Alt-/` while in-game and not in the GUI. It will open the list of
@@ -71,11 +121,14 @@ configurable plugins. Select **Better Terminal** from the list to configure this
 Alternatively you can open the settings by double-clicking on this plugin in the Plugins
 dialog of Pulsar, then clicking **Settings** in the dialog opened.
 
-The configuration allows for setting a default search text, which is useful if you work
-with on blocks and groups with a common part in their name, for example the ship's or
-station's name. It also allows for turning each feature ON/OFF.
+The configuration allows for:
 
-The configuration can be changed anytime without having to restart the game.
+- Setting a **default search text**, which is useful if you work with blocks and groups
+  that share a common part of their name (e.g. the ship's or station's name).
+- **Turning each feature ON/OFF** individually, including each context menu item category.
+- Choosing the **double-click action** for block list items.
+
+The configuration can be changed at any time without restarting the game.
 
 ![Configuration](doc/ConfigDialog.png "Config Dialog")
 
