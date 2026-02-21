@@ -363,3 +363,5 @@ MigrationBackup/
 
 # Claude Code
 .claude
+
+# Plugin specific
