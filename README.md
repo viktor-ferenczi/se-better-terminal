@@ -15,7 +15,7 @@ Please consider supporting my work on [Patreon](https://www.patreon.com/semods) 
 
 ## Installation
 
-1. Install Pulsar's [Space Engineers Launcher](https://github.com/sepluginloader/SpaceEngineersLauncher)
+1. Install [Pulsar](https://github.com/StarCpt/Pulsar-Installer/)
 2. Run the game
 3. In the new **Plugins** menu add the "Better Terminal" plugin
 4. Apply and restart the game as requested
