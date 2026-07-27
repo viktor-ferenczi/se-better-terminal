@@ -1,4 +1,4 @@
-// 2569e340
+// fb57eb55
 ldarg.0
 call Sandbox.Game.GameSystems.MyGridTerminalSystem Sandbox.Game.Gui.MyTerminalControlPanel::get_TerminalSystem()
 brtrue.s L0
@@ -80,7 +80,7 @@ ldsfld Sandbox.Game.Screens.Helpers.MyTerminalComparer Sandbox.Game.Screens.Help
 call static System.Void System.Array::Sort(Sandbox.Game.Entities.Cube.MyTerminalBlock[] array, System.Collections.Generic.IComparer`1<Sandbox.Game.Entities.Cube.MyTerminalBlock> comparer)
 ldarg.0
 ldfld Sandbox.Graphics.GUI.MyGuiControlListbox Sandbox.Game.Gui.MyTerminalControlPanel::m_blockListbox
-ldfld System.Collections.Generic.List`1<Sandbox.Graphics.GUI.Item> Sandbox.Graphics.GUI.MyGuiControlListbox::SelectedItems
+callvirt virtual System.Collections.Generic.List`1<Sandbox.Graphics.GUI.Item> Sandbox.Graphics.GUI.MyGuiControlListbox::get_SelectedItems()
 callvirt virtual System.Void System.Collections.Generic.List`1<Sandbox.Graphics.GUI.Item>::Clear()
 ldarg.0
 ldfld Sandbox.Graphics.GUI.MyGuiControlListbox Sandbox.Game.Gui.MyTerminalControlPanel::m_blockListbox
@@ -104,7 +104,7 @@ ret
 L13:
 ldarg.0
 ldfld Sandbox.Graphics.GUI.MyGuiControlListbox Sandbox.Game.Gui.MyTerminalControlPanel::m_blockListbox
-ldfld VRage.Collections.ObservableCollection`1<Sandbox.Graphics.GUI.Item> Sandbox.Graphics.GUI.MyGuiControlListbox::Items
+callvirt virtual VRage.Collections.ObservableCollection`1<Sandbox.Graphics.GUI.Item> Sandbox.Graphics.GUI.MyGuiControlListbox::get_Items()
 callvirt VRage.Collections.Enumerator<Sandbox.Graphics.GUI.Item> VRage.Collections.ObservableCollection`1<Sandbox.Graphics.GUI.Item>::GetEnumerator()
 stloc.s 7 (VRage.Collections.ObservableCollection`1+Enumerator[Sandbox.Graphics.GUI.MyGuiControlListbox+Item])
 [EX_BeginException]

@@ -160,7 +160,7 @@ namespace ClientPlugin.Patches
         {
             var il = code.ToList();
             il.RecordOriginalCode(patchedMethod);
-            il.VerifyCodeHash(patchedMethod, "c3da4457");
+            il.VerifyCodeHash(patchedMethod, "01fda0c0");
 
             // We replace the code between these two lines:
             // this.m_blockListbox.IsInBulkInsert = true;
