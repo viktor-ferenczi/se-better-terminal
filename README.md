@@ -137,6 +137,15 @@ The configuration can be changed at any time without restarting the game.
 Should you have any issues using this plugin, then please either submit a ticket here
 on GitHub or report the issue in the `#bug-reports` channel of the [SE Mods Discord](https://discord.gg/PYPFPGf3Ca). 
 
+## Development
+
+Based on the [client plugin template](https://github.com/CometWorks/client-plugin-template).
+Run `setup.py` once to detect the game folder, then build the solution. Load the working copy
+through a Pulsar development folder: start Pulsar with `-sources` and add the repository with
+the Sources button. Builds deploy into Pulsar's `Local` plugin folder only if `Pulsar` is set
+in `Directory.Build.props.user` or passed as `-p:Pulsar=...`, see the template's README for
+the details.
+
 ## Want to know more?
 
 - [SE Mods Discord](https://discord.gg/PYPFPGf3Ca) FAQ, Troubleshooting, Support, Bug Reports, Discussion
