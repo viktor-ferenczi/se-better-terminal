@@ -2,7 +2,6 @@
 using Sandbox.Graphics.GUI;
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using VRage.Utils;
 
 namespace ClientPlugin.Settings.Elements;
@@ -21,6 +20,25 @@ internal class SliderAttribute : Attribute, IElement
     public readonly SliderType Type;
     public readonly string Label;
     public readonly string Description;
+
+    // The dialog's CanHideOthers setter is protected, so a subclass sets it to
+    // hide the settings screen behind the dialog.
+    private sealed class AmountDialog : MyGuiScreenDialogAmount
+    {
+        public AmountDialog(SliderAttribute slider, float amount)
+            : base(
+                slider.Min,
+                slider.Max,
+                MyCommonTexts.DialogAmount_SetValueCaption,
+                defaultAmount: amount,
+                parseAsInteger: slider.Type == SliderType.Integer,
+                backgroundTransition: MySandboxGame.Config.UIBkOpacity,
+                guiTransition: MySandboxGame.Config.UIOpacity,
+                incrementStep: slider.Step)
+        {
+            CanHideOthers = true;
+        }
+    }
 
     public SliderAttribute(float min, float max, float step = 1f, SliderType type = SliderType.Float, string label = null, string description = null)
     {
@@ -55,22 +73,8 @@ internal class SliderAttribute : Attribute, IElement
 
         bool SpecifyValue(MyGuiControlSlider element)
         {
-            MyGuiScreenDialogAmount screen = new MyGuiScreenDialogAmount(
-                Min,
-                Max,
-                MyCommonTexts.DialogAmount_SetValueCaption,
-                defaultAmount: Convert.ToSingle(propertyGetter()),
-                parseAsInteger: Type == SliderType.Integer,
-                backgroundTransition: MySandboxGame.Config.UIBkOpacity,
-                guiTransition: MySandboxGame.Config.UIOpacity);
-
+            var screen = new AmountDialog(this, Convert.ToSingle(propertyGetter()));
             screen.OnConfirmed += (value) => element.Value = value;
-
-            // Much needed visual change requires reflection due to private types
-            typeof(MyGuiScreenBase)
-                .GetField("m_canHideOthers", BindingFlags.NonPublic | BindingFlags.Instance)
-                .SetValue(screen, true);
-
             MyGuiSandbox.AddScreen(screen);
             return true;
         }
