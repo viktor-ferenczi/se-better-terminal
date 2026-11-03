@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
-    <!-- Plugin version, change it here at a single place -->
-    <Version>1.2.7</Version>
+    <!-- Plugin version. Pulsar compiles only the .cs files, so ClientPlugin/Plugin.cs repeats it: change both -->
+    <Version>1.2.8</Version>
     <AssemblyVersion>$(Version)</AssemblyVersion>
     <FileVersion>$(Version)</FileVersion>
   </PropertyGroup>
