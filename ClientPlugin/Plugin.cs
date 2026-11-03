@@ -6,6 +6,12 @@ using HarmonyLib;
 using Sandbox.Graphics.GUI;
 using VRage.Plugins;
 
+// Define assembly version when compiled by Pulsar
+#if !LOCAL_BUILD
+[assembly: AssemblyVersion("1.2.8")]
+[assembly: AssemblyFileVersion("1.2.8")]
+#endif
+
 namespace ClientPlugin
 {
     // ReSharper disable once UnusedType.Global
