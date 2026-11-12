@@ -390,8 +390,10 @@ namespace ClientPlugin.Organizer
                     Slot(4, next++, key, "OnOff");
             }
 
-            // Page 9: repair. The repair projector is always the last slot.
+            // Page 9: repair and emergency. The repair projector is always the last slot.
             Slot(8, 0, BlockKind.Welder.ToString(), "OnOff");
+            Slot(8, 4, BlockKind.Parachute.ToString(), "AutoDeploy");
+            Slot(8, 6, BlockKind.Parachute.ToString(), "Open");
             var remoteControl = ship.Blocks.FirstOrDefault(b => b.Kind == BlockKind.RemoteControl);
             if (remoteControl != null)
             {

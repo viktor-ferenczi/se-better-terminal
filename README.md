@@ -154,7 +154,7 @@ What it does, in this order:
    | 3 | Jump | Jump, recharge, ON/OFF, jump distance down and up |
    | 4 | Cameras | View of each camera |
    | 5 | Systems | ON/OFF of each thruster type, wheels, O2/H2 generators, turrets, guns, decoys, solar panels, wind turbines |
-   | 9 | Repair | 1: welders, 8: take control of the remote control, 9: repair projector ON/OFF |
+   | 9 | Repair and emergency | 1: welders, 5: parachute auto deploy, 7: open or close the parachutes, 8: take control of the remote control, 9: repair projector ON/OFF |
 
 8. **Copies the cockpit's toolbar to the remote control** as it is, then adds the cockpit's
    button which takes control of the remote control (page 9, slot 8).

@@ -127,6 +127,7 @@ static class Program
         var projector = Add("Projector", "Projector");
         projector.IsRepairProjector = true;
         var timer = Add("TimerBlock", "Timer Block");
+        Add("Parachute", "Parachute Hatch");
 
         var plan = Planner.Plan(ship, true);
         string Name(BlockInfo block) => plan.Blocks[block.EntityId].Name;
@@ -203,6 +204,8 @@ static class Program
         Equal(connector.EntityId, At(1, 9)?.BlockId, "1.9 locks the connector");
         Equal("Recharge", At(2, 3)?.Action, "2.3 recharges the batteries");
         Equal("Mole - Thrusters", At(2, 6)?.GroupName, "2.6 turns all thrusters off");
+        Equal("AutoDeploy", At(9, 5)?.Action, "9.5 toggles the auto deploy of the parachutes");
+        Equal("Mole - Parachutes", At(9, 7)?.GroupName, "9.7 opens the parachutes");
         Equal(projector.EntityId, At(9, 9)?.BlockId, "9.9 is the repair projector");
         Check(
             plan.OwnedPages.SetEquals(new[] { 0, 1, 3, 4, 8 }),
