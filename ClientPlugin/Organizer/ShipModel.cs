@@ -110,9 +110,13 @@ namespace ClientPlugin.Organizer
     public class SlotPlan
     {
         public int Index; // page * 9 + slot, both from 0
-        public string GroupName; // Either a group...
-        public long BlockId; // ...or a single block
+        public string GroupName; // Either an action of a group...
+        public long BlockId; // ...or of a single block
         public string Action;
+
+        // ...or all the ship's tools or weapons of this block definition, used with the mouse buttons
+        public string WeaponTypeId;
+        public string WeaponSubtypeId;
     }
 
     public class OrganizerPlan

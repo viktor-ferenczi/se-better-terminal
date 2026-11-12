@@ -1,7 +1,7 @@
 """In game test of the ship organizer, driven through the Remote plugin's API.
 
 Needs a running client with the Remote and Better Terminal plugins and a blueprint
-of a ship with a cockpit, batteries, thrusters and a repair projector (default: Bear).
+of a ship with a cockpit or a remote control, batteries and thrusters (default: Bear).
 Pastes the ship, organizes it with the /bt chat command, checks the result, reverts
 and checks that the ship is back to what it was. Prints PASS or the failed checks.
 
@@ -118,9 +118,13 @@ def main():
             i for i, b in before.items() if b["type"] == "MyObjectBuilder_" + type_name
         ]
 
-    cockpit, projector = kind("Cockpit")[0], kind("Projector")[0]
-    remote = (kind("RemoteControl") or [None])[0]
-    projection_before = projection(api, projector)
+    # A drone has no cockpit: its remote control gets the toolbar
+    cockpit = (kind("Cockpit") + kind("RemoteControl"))[0]
+    remote = (
+        kind("RemoteControl")[0] if kind("Cockpit") and kind("RemoteControl") else None
+    )
+    projector = (kind("Projector") or [None])[0]
+    projection_before = projection(api, projector) if projector else None
     print("projection before:", projection_before, flush=True)
 
     # Organize
@@ -134,10 +138,11 @@ def main():
     check(
         all(n.startswith(prefix) for n in names), "all names start with the ship name"
     )
-    check(
-        after[projector]["name"] == prefix + "Projector Repair",
-        f"repair projector name: {after[projector]['name']}",
-    )
+    if projector:
+        check(
+            after[projector]["name"] == prefix + "Projector Repair",
+            f"repair projector name: {after[projector]['name']}",
+        )
     for type_name in (
         "Thrust",
         "Gyro",
@@ -149,7 +154,8 @@ def main():
             all(not after[i]["terminal"] for i in kind(type_name)),
             f"{type_name} blocks are hidden from the terminal",
         )
-    check(not after[cockpit]["terminal"], "the cockpit is hidden from the terminal")
+    if kind("Cockpit"):
+        check(not after[cockpit]["terminal"], "the cockpit is hidden from the terminal")
     if remote:
         check(after[remote]["terminal"], "the remote control stays in the terminal")
     cameras = sorted(after[i]["name"] for i in kind("CameraBlock"))
@@ -193,10 +199,70 @@ def main():
     check(all(i in grouped for i in hidden), "every hidden block is in a group")
 
     slots = after[cockpit]["slots"]
-    check(
-        slots.get(80, (None, None, None))[1:] == (projector, "OnOff"),
-        f"slot 9.9 is the repair projector: {slots.get(80)}",
+    tools = kind("Drill") + kind("ShipWelder") + kind("ShipGrinder")
+    guns = (
+        kind("SmallGatlingGun")
+        + kind("SmallMissileLauncher")
+        + kind("SmallMissileLauncherReload")
     )
+    # A connector's camera faces the same side, on page 1 and next to its lock on page 2
+    for connector in kind("ShipConnector"):
+        side = after[connector]["name"].split(" Connector ")[1].split()[0]
+        camera = next(
+            (i for i in kind("CameraBlock") if f" Camera {side}" in after[i]["name"]),
+            None,
+        )
+        index = next(
+            (
+                i
+                for i, s in slots.items()
+                if 9 <= i < 18 and s[1:] == (connector, "SwitchLock")
+            ),
+            None,
+        )
+        check(index is not None, f"page 2 locks {after[connector]['name']}")
+        if camera and index:
+            check(
+                slots.get(index - 1, (None, None, None))[1:] == (camera, "View"),
+                f"page 2 has the {side} camera before the connector",
+            )
+            if not (guns and not tools):
+                check(
+                    any(s[1:] == (camera, "View") for i, s in slots.items() if i < 6),
+                    f"page 1 has the {side} docking camera",
+                )
+    if projector:
+        check(
+            slots.get(80, (None, None, None))[1:] == (projector, "OnOff"),
+            f"slot 9.9 is the repair projector: {slots.get(80)}",
+        )
+
+    # The role of the ship: the tool or the main weapon is on 1.1, then the reverse thrusters
+    page1 = [slots[i] for i in sorted(slots) if i < 9]
+    print("page 1:", page1, flush=True)
+    if tools or guns:
+        check(
+            page1[0][0].endswith("ToolbarItemWeapon"),
+            f"slot 1.1 is the tool or the main weapon: {page1[0]}",
+        )
+    reverse = [g for g in groups_after if g.endswith("Thrusters (Backward)")]
+    if reverse:
+        check(
+            any(s[1] in reverse and s[2] == "OnOff" for s in page1),
+            "page 1 switches the reverse thrusters",
+        )
+    if guns and not tools:
+        check(
+            not any(s[2] == "SwitchLock" for s in page1),
+            "a fighter has no docking on page 1",
+        )
+        front = [i for i in kind("CameraBlock") if " Camera Front" in after[i]["name"]]
+        check(
+            not front
+            or any(s[1:] == (front[0], "View") for s in page1)
+            or len(front) > 1,
+            "a fighter has a forward camera on page 1",
+        )
     if remote:
         check(
             slots.get(79, (None, None, None))[1:] == (remote, "Control"),
@@ -208,8 +274,8 @@ def main():
             "the remote control has the cockpit's toolbar without the Control button",
         )
     check(
-        slots.get(11, (None, None, None))[1:] == (batteries, "Recharge"),
-        f"slot 2.3 recharges the batteries: {slots.get(11)}",
+        slots.get(18, (None, None, None))[1:] == (batteries, "Recharge"),
+        f"slot 3.1 recharges the batteries: {slots.get(18)}",
     )
     check(
         all(
@@ -220,34 +286,36 @@ def main():
         "all toolbar groups exist",
     )
 
-    loaded = projection(api, projector)
-    check(
-        loaded["organized"], "the repair projector was reloaded with the organized ship"
-    )
-    check(
-        loaded["enabled"] == projection_before["enabled"],
-        "the repair projector's switch is as it was",
-    )
-    print("projection organized:", loaded, flush=True)
-
-    # Turned on, the projection covers the ship: every projected block is built
-    position = tuple(
-        next(
-            c["min"]
-            for c in api.list_cubes(grid_id, 0, 1000)["cubes"]
-            if c["fatEntityId"] == projector
+    if projector:
+        loaded = projection(api, projector)
+        check(
+            loaded["organized"],
+            "the repair projector was reloaded with the organized ship",
         )
-    )
-    api.set_enabled(grid_id, position, True)
-    time.sleep(8)
-    info = api.get_block(grid_id, position).get("detailedInfo") or ""
-    progress = re.search(r"Build progress: (\d+)/(\d+)", info)
-    check(
-        progress is not None and progress.group(1) == progress.group(2) != "0",
-        f"the projection covers the ship: {info!r}",
-    )
-    api.set_enabled(grid_id, position, projection_before["enabled"] == "true")
-    time.sleep(3)
+        check(
+            loaded["enabled"] == projection_before["enabled"],
+            "the repair projector's switch is as it was",
+        )
+        print("projection organized:", loaded, flush=True)
+
+        # Turned on, the projection covers the ship: every projected block is built
+        position = tuple(
+            next(
+                c["min"]
+                for c in api.list_cubes(grid_id, 0, 1000)["cubes"]
+                if c["fatEntityId"] == projector
+            )
+        )
+        api.set_enabled(grid_id, position, True)
+        time.sleep(8)
+        info = api.get_block(grid_id, position).get("detailedInfo") or ""
+        progress = re.search(r"Build progress: (\d+)/(\d+)", info)
+        check(
+            progress is not None and progress.group(1) == progress.group(2) != "0",
+            f"the projection covers the ship: {info!r}",
+        )
+        api.set_enabled(grid_id, position, projection_before["enabled"] == "true")
+        time.sleep(3)
 
     # Organizing again changes nothing
     api.send_chat(f"/bt organize {grid_id}")
@@ -279,11 +347,12 @@ def main():
         groups_reverted == groups_before,
         f"revert of groups: {sorted(set(groups_reverted) ^ set(groups_before))}",
     )
-    projection_reverted = projection(api, projector)
-    check(
-        projection_reverted == projection_before,
-        f"revert of the repair projector: {projection_reverted}",
-    )
+    if projector:
+        projection_reverted = projection(api, projector)
+        check(
+            projection_reverted == projection_before,
+            f"revert of the repair projector: {projection_reverted}",
+        )
 
     print(
         "PASS" if not failures else f"FAIL: {len(failures)} checks failed", flush=True

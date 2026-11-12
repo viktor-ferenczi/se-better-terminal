@@ -128,6 +128,7 @@ static class Program
         projector.IsRepairProjector = true;
         var timer = Add("TimerBlock", "Timer Block");
         Add("Parachute", "Parachute Hatch");
+        var rearCamera = Add("CameraBlock", "Camera", ShipDirection.Back);
 
         var plan = Planner.Plan(ship, true);
         string Name(BlockInfo block) => plan.Blocks[block.EntityId].Name;
@@ -198,23 +199,126 @@ static class Program
         Equal(projector.EntityId, plan.RepairProjectorId, "repair projector");
         SlotPlan At(int page, int slot) =>
             plan.CockpitSlots.SingleOrDefault(s => s.Index == (page - 1) * 9 + slot - 1);
-        Equal("Mole - Drills", At(1, 1)?.GroupName, "1.1 is the tool");
-        Equal("DecreaseOverride", At(1, 2)?.Action, "1.2 lowers the lift");
-        Equal(camera.EntityId, At(1, 4)?.BlockId, "1.4 is the front camera");
+        Equal("Drill", At(1, 1)?.WeaponTypeId, "1.1 is the tool to work with");
+        Equal("Mole - Drills", At(1, 2)?.GroupName, "1.2 is the switch of the tools");
+        Equal("Mole - Thrusters (Backward)", At(1, 3)?.GroupName, "1.3 is the reverse thrusters");
+        Equal("OnOff", At(1, 3)?.Action, "1.3 turns the reverse thrusters on and off");
+        Equal("DecreaseOverride", At(1, 4)?.Action, "1.4 lowers the lift");
+        Equal(rearCamera.EntityId, At(1, 6)?.BlockId, "1.6 is the camera on the connector's side");
+        Check(
+            plan.CockpitSlots.All(s => s.BlockId != camera.EntityId || s.Index / 9 == 4),
+            "the front camera is only on the cameras page"
+        );
         Equal(connector.EntityId, At(1, 9)?.BlockId, "1.9 locks the connector");
-        Equal("Recharge", At(2, 3)?.Action, "2.3 recharges the batteries");
-        Equal("Mole - Thrusters", At(2, 6)?.GroupName, "2.6 turns all thrusters off");
+        Equal(rearCamera.EntityId, At(2, 1)?.BlockId, "2.1 is the docking camera");
+        Equal(connector.EntityId, At(2, 2)?.BlockId, "2.2 locks the connector");
+        Equal("Recharge", At(3, 1)?.Action, "3.1 recharges the batteries");
+        Equal("Stockpile", At(3, 2)?.Action, "3.2 refills the hydrogen tanks");
+        Equal("Mole - Thrusters", At(3, 4)?.GroupName, "3.4 turns all thrusters off");
         Equal("AutoDeploy", At(9, 5)?.Action, "9.5 toggles the auto deploy of the parachutes");
         Equal("Mole - Parachutes", At(9, 7)?.GroupName, "9.7 opens the parachutes");
         Equal(projector.EntityId, At(9, 9)?.BlockId, "9.9 is the repair projector");
         Check(
-            plan.OwnedPages.SetEquals(new[] { 0, 1, 3, 4, 8 }),
+            plan.OwnedPages.SetEquals(new[] { 0, 1, 2, 4, 5, 8 }),
             "owned pages: " + string.Join(",", plan.OwnedPages)
         );
         Check(
             plan.CockpitSlots.Select(s => s.Index).Distinct().Count() == plan.CockpitSlots.Count,
             "one item per slot"
         );
+
+        // A drone: the remote control gets the toolbar, there is nothing to copy it to
+        var drone = new ShipInfo { ShipName = "Drone" };
+        drone.Blocks.Add(
+            new BlockInfo
+            {
+                EntityId = 1,
+                TypeId = "RemoteControl",
+                DefaultName = "Remote Control",
+                Kind = BlockKind.RemoteControl,
+                IsMainCockpit = true,
+            }
+        );
+        drone.Blocks.Add(
+            new BlockInfo
+            {
+                EntityId = 2,
+                TypeId = "Drill",
+                DefaultName = "Drill",
+                Kind = BlockKind.Drill,
+            }
+        );
+        var dronePlan = Planner.Plan(drone, true);
+        Equal(1L, dronePlan.CockpitId, "the drone's remote control gets the toolbar");
+        Equal(0L, dronePlan.RemoteControlId, "no copy of the toolbar on a drone");
+        Equal(
+            "Drone - Remote Control",
+            dronePlan.Blocks[1].Name,
+            "no Main suffix on the drone's remote control"
+        );
+        Equal(
+            "Drill",
+            dronePlan.CockpitSlots.FirstOrDefault(s => s.Index == 0)?.WeaponTypeId,
+            "1.1 is the drone's tool"
+        );
+
+        // A fighter: weapons first, the main one on 1.1, then reverse thrusters and the forward camera. Docking is on page 2.
+        var fighter = new ShipInfo { ShipName = "Wasp" };
+        long fighterId = 0;
+        BlockInfo Arm(
+            string type,
+            string subtype,
+            string name,
+            ShipDirection direction = ShipDirection.None,
+            string thrusterType = null
+        )
+        {
+            var block = new BlockInfo
+            {
+                EntityId = ++fighterId,
+                TypeId = type,
+                SubtypeId = subtype,
+                DefaultName = name,
+                Kind = Naming.Classify(type, subtype, true),
+                Direction = direction,
+                ThrusterType = thrusterType,
+            };
+            fighter.Blocks.Add(block);
+            return block;
+        }
+
+        Arm("Cockpit", "", "Fighter Cockpit").IsMainCockpit = true;
+        Arm("SmallMissileLauncher", "", "Rocket Launcher");
+        Arm("SmallGatlingGun", "", "Gatling Gun");
+        Arm("SmallGatlingGun", "", "Gatling Gun");
+        Arm("Thrust", "", "Ion Thruster", ShipDirection.Back, "Ion");
+        Arm("Thrust", "", "Ion Thruster", ShipDirection.Top, "Ion");
+        var gunCamera = Arm("CameraBlock", "", "Camera", ShipDirection.Front);
+        var dockCamera = Arm("CameraBlock", "", "Camera", ShipDirection.Bottom);
+        var dock = Arm("ShipConnector", "Connector", "Connector", ShipDirection.Bottom);
+        var fighterPlan = Planner.Plan(fighter, true);
+        SlotPlan Fighter(int page, int slot) =>
+            fighterPlan.CockpitSlots.SingleOrDefault(s => s.Index == (page - 1) * 9 + slot - 1);
+        Equal("SmallGatlingGun", Fighter(1, 1)?.WeaponTypeId, "fighter 1.1 is the main weapon");
+        Equal(
+            "SmallMissileLauncher",
+            Fighter(1, 2)?.WeaponTypeId,
+            "fighter 1.2 is the secondary weapon"
+        );
+        Equal(
+            "Wasp - Ion Thrusters (Backward)",
+            Fighter(1, 3)?.GroupName,
+            "fighter 1.3 is the reverse thrusters"
+        );
+        Equal(gunCamera.EntityId, Fighter(1, 4)?.BlockId, "fighter 1.4 is the forward camera");
+        Check(
+            fighterPlan
+                .CockpitSlots.Where(s => s.Index < 9)
+                .All(s => s.BlockId != dock.EntityId && s.BlockId != dockCamera.EntityId),
+            "no docking on the fighter's page 1"
+        );
+        Equal(dockCamera.EntityId, Fighter(2, 1)?.BlockId, "fighter 2.1 is the docking camera");
+        Equal(dock.EntityId, Fighter(2, 2)?.BlockId, "fighter 2.2 locks the connector");
 
         // No prefix for a default grid name
         ship.ShipName = "Small Grid 1234";
@@ -243,7 +347,7 @@ static class Program
 
         foreach (var slot in plan.CockpitSlots.OrderBy(s => s.Index))
             Console.WriteLine(
-                $"  SLOT {slot.Index / 9 + 1}.{slot.Index % 9 + 1} {slot.GroupName ?? names[slot.BlockId]} {slot.Action}"
+                $"  SLOT {slot.Index / 9 + 1}.{slot.Index % 9 + 1} {slot.WeaponSubtypeId ?? slot.GroupName ?? names[slot.BlockId]} {slot.Action}"
             );
 
         var loose = ship.Blocks.Count(b =>
@@ -336,10 +440,11 @@ static class Blueprint
             ship.Blocks.Add(info);
         }
 
-        var cockpit = ship
-            .Blocks.Where(b => b.Kind == BlockKind.Cockpit)
-            .OrderByDescending(b => b.IsMainCockpit)
-            .FirstOrDefault();
+        var cockpit =
+            ship.Blocks.Where(b => b.Kind == BlockKind.Cockpit)
+                .OrderByDescending(b => b.IsMainCockpit)
+                .FirstOrDefault()
+            ?? ship.Blocks.FirstOrDefault(b => b.Kind == BlockKind.RemoteControl);
         if (cockpit == null)
             return ship;
 

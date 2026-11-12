@@ -84,6 +84,8 @@ namespace ClientPlugin.Organizer
 
         private static readonly string[] ThrusterTypeOrder = { "Atmospheric", "Hydrogen", "Ion" };
 
+        private static int Square(int value) => value * value;
+
         public static bool IsDefaultGridName(string name)
         {
             return string.IsNullOrWhiteSpace(name)
@@ -194,6 +196,9 @@ namespace ClientPlugin.Organizer
                     case BlockKind.Thruster:
                         var label = Naming.Plural(Naming.ThrusterLabel(block.ThrusterType));
                         Add("Thruster", "Thrusters", block);
+                        // The braking thrusters of all types: turned off to cruise without burning fuel
+                        if (block.Direction == ShipDirection.Back)
+                            Add("Reverse", "Thrusters (Backward)", block);
                         Add("Thruster:" + block.ThrusterType, label, block);
                         if (block.Direction != ShipDirection.None)
                             Add(
@@ -218,12 +223,16 @@ namespace ClientPlugin.Organizer
                 }
             }
 
-            // "Thrusters" would repeat the only thruster type's group, a single connector needs no group
+            // The groups of all thrusters would repeat the groups of the only thruster type, a single connector needs no group
             var thrusterTypes = groups.Keys.Count(k =>
                 k.StartsWith("Thruster:") && k.Split(':').Length == 2
             );
             if (thrusterTypes == 1)
+            {
                 Remove("Thruster");
+                if (groups.ContainsKey("Reverse"))
+                    Remove("Reverse");
+            }
             if (
                 groups.TryGetValue("Connector", out var connectors)
                 && connectors.BlockIds.Count < 2
@@ -246,8 +255,11 @@ namespace ClientPlugin.Organizer
         )
         {
             var cockpits = ship.Blocks.Where(b => b.Kind == BlockKind.Cockpit).ToList();
+            // A drone has no cockpit, its remote control gets the toolbar then
             var cockpit =
-                cockpits.FirstOrDefault(b => b.IsMainCockpit) ?? cockpits.FirstOrDefault();
+                cockpits.FirstOrDefault(b => b.IsMainCockpit)
+                ?? cockpits.FirstOrDefault()
+                ?? ship.Blocks.FirstOrDefault(b => b.Kind == BlockKind.RemoteControl);
             if (cockpit == null)
                 return;
 
@@ -302,73 +314,164 @@ namespace ClientPlugin.Organizer
                     Slot(page, slot, "Connector", "SwitchLock");
             }
 
-            // Page 1: flight and operation. The ship's tools come first, they tell its role.
+            // The camera to align a connector with: the nearest one facing the same side
+            BlockInfo DockingCamera(BlockInfo connector)
+            {
+                return cameras
+                    .Where(c =>
+                        c.Direction == connector.Direction && c.Direction != ShipDirection.None
+                    )
+                    .OrderBy(c =>
+                        Square(c.X - connector.X)
+                        + Square(c.Y - connector.Y)
+                        + Square(c.Z - connector.Z)
+                    )
+                    .FirstOrDefault();
+            }
+
+            var dockingCameras = connectors
+                .Select(DockingCamera)
+                .Where(c => c != null)
+                .Distinct()
+                .ToList();
+
+            // The tools or weapons of one block definition as a toolbar item, the most numerous first
+            IEnumerable<BlockInfo> Definitions(params BlockKind[] kinds)
+            {
+                return ship
+                    .Blocks.Where(b => kinds.Contains(b.Kind))
+                    .GroupBy(b => b.TypeId + "/" + b.SubtypeId)
+                    .OrderByDescending(g => g.Count())
+                    .ThenBy(g => g.Key)
+                    .Select(g => g.First());
+            }
+
+            void WeaponSlot(int page, int slot, BlockInfo block)
+            {
+                Put(
+                    page,
+                    slot,
+                    new SlotPlan { WeaponTypeId = block.TypeId, WeaponSubtypeId = block.SubtypeId }
+                );
+            }
+
+            // The role of the ship decides the first slots of page 1
+            var tools = new[] { BlockKind.Drill, BlockKind.Welder, BlockKind.Grinder };
+            var isToolShip = ship.Blocks.Any(b => tools.Contains(b.Kind));
+            var isFighter = !isToolShip && ship.Blocks.Any(b => b.Kind == BlockKind.Gun);
+
+            // Page 1: flight and operation
             plan.OwnedPages.Add(0);
             var next = 0;
-            foreach (var tool in new[] { BlockKind.Drill, BlockKind.Welder, BlockKind.Grinder })
+            if (isToolShip)
             {
-                if (groups.ContainsKey(tool.ToString()))
-                    Slot(0, next++, tool.ToString(), "OnOff");
+                // Slot 1 is the main tool to work with, then the switches of the tools
+                WeaponSlot(0, next++, Definitions(tools).First());
+                foreach (var tool in tools)
+                {
+                    if (groups.ContainsKey(tool.ToString()))
+                        Slot(0, next++, tool.ToString(), "OnOff");
+                }
+            }
+            else if (isFighter)
+            {
+                // Slot 1 is the main weapon, then the secondary ones
+                foreach (var weapon in Definitions(BlockKind.Gun).Take(3))
+                    WeaponSlot(0, next++, weapon);
+            }
+
+            // Braking thrusters: off for fuel efficient cruising
+            var reverse = groups.ContainsKey("Reverse")
+                ? "Reverse"
+                : thrusterTypes
+                    .Select(t => $"Thruster:{t}:{ShipDirection.Back}")
+                    .FirstOrDefault(groups.ContainsKey);
+            if (reverse != null)
+                Slot(0, next++, reverse, "OnOff");
+
+            // A fighter aims with the zoom of its forward cameras, its docking is all on page 2
+            if (isFighter)
+            {
+                foreach (var camera in cameras.Where(c => c.Direction == ShipDirection.Front))
+                {
+                    if (next < 6)
+                        BlockSlot(0, next++, camera, "View");
+                }
             }
 
             // Lift thrusters: override for hovering and cruising in gravity
             var liftType = thrusterTypes.FirstOrDefault(t =>
                 groups.ContainsKey($"Thruster:{t}:{ShipDirection.Top}")
             );
-            if (liftType != null)
+            if (liftType != null && next < 5)
             {
                 Slot(0, next++, $"Thruster:{liftType}:{ShipDirection.Top}", "DecreaseOverride");
                 Slot(0, next++, $"Thruster:{liftType}:{ShipDirection.Top}", "IncreaseOverride");
             }
 
-            foreach (
-                var camera in cameras.Where(b =>
-                    b.Direction == ShipDirection.Front
-                    || b.Direction == ShipDirection.Back
-                    || b.Direction == ShipDirection.Bottom
-                )
-            )
-            {
-                if (next < 6)
-                    BlockSlot(0, next++, camera, "View");
-            }
-
             Slot(0, 6, BlockKind.Light.ToString(), "OnOff");
             Slot(0, 7, BlockKind.Spotlight.ToString(), "OnOff");
-            if (connectors.Count != 0)
-                Docking(0, 8);
-            else
-                Slot(0, 8, BlockKind.LandingGear.ToString(), "SwitchLock");
+            if (!isFighter)
+            {
+                // Docking: the cameras on the connectors' sides as far as they fit, all of them are on page 2
+                foreach (var camera in dockingCameras)
+                {
+                    if (next < 6)
+                        BlockSlot(0, next++, camera, "View");
+                }
 
-            // Page 2: parked. Fixed slots, so they are the same on every ship.
-            plan.OwnedPages.Add(1);
-            Docking(1, 0);
-            Slot(1, 1, BlockKind.LandingGear.ToString(), "SwitchLock");
-            Slot(1, 2, BlockKind.Battery.ToString(), "Recharge");
-            Slot(1, 3, "GasTank:Hydrogen", "Stockpile");
-            Slot(1, 4, "GasTank:Oxygen", "Stockpile");
+                if (connectors.Count != 0)
+                    Docking(0, 8);
+                else
+                    Slot(0, 8, BlockKind.LandingGear.ToString(), "SwitchLock");
+            }
+
+            // Page 2: docking. Each connector with its camera, the landing gears on the last slot.
+            next = 0;
+            foreach (
+                var connector in connectors
+                    .OrderBy(c => Array.IndexOf(Directions, c.Direction))
+                    .ThenBy(c => plan.Blocks[c.EntityId].Name)
+            )
+            {
+                var camera = DockingCamera(connector);
+                if (next + (camera != null ? 2 : 1) > 8)
+                    break;
+
+                if (camera != null)
+                    BlockSlot(1, next++, camera, "View");
+                BlockSlot(1, next++, connector, "SwitchLock");
+            }
+
+            Slot(1, 8, BlockKind.LandingGear.ToString(), "SwitchLock");
+
+            // Page 3: docked. Recharge, refill and what is turned off while docked, on fixed slots.
+            Slot(2, 0, BlockKind.Battery.ToString(), "Recharge");
+            Slot(2, 1, "GasTank:Hydrogen", "Stockpile");
+            Slot(2, 2, "GasTank:Oxygen", "Stockpile");
             Slot(
-                1,
-                5,
+                2,
+                3,
                 thrusterTypes.Count == 1 ? "Thruster:" + thrusterTypes[0] : "Thruster",
                 "OnOff"
             );
-            Slot(1, 6, BlockKind.Gyro.ToString(), "OnOff");
-            Slot(1, 7, BlockKind.HydrogenEngine.ToString(), "OnOff");
-            Slot(1, 8, BlockKind.Reactor.ToString(), "OnOff");
+            Slot(2, 4, BlockKind.Gyro.ToString(), "OnOff");
+            Slot(2, 5, BlockKind.HydrogenEngine.ToString(), "OnOff");
+            Slot(2, 6, BlockKind.Reactor.ToString(), "OnOff");
+            Slot(2, 7, BlockKind.GasGenerator.ToString(), "OnOff");
 
-            // Page 3: jump
-            Slot(2, 0, BlockKind.JumpDrive.ToString(), "Jump");
-            Slot(2, 1, BlockKind.JumpDrive.ToString(), "Recharge");
-            Slot(2, 2, BlockKind.JumpDrive.ToString(), "OnOff");
-            Slot(2, 3, BlockKind.JumpDrive.ToString(), "DecreaseJumpDistance");
-            Slot(2, 4, BlockKind.JumpDrive.ToString(), "IncreaseJumpDistance");
+            // Page 4: jump
+            Slot(3, 0, BlockKind.JumpDrive.ToString(), "Jump");
+            Slot(3, 1, BlockKind.JumpDrive.ToString(), "Recharge");
+            Slot(3, 2, BlockKind.JumpDrive.ToString(), "OnOff");
+            Slot(3, 3, BlockKind.JumpDrive.ToString(), "DecreaseJumpDistance");
+            Slot(3, 4, BlockKind.JumpDrive.ToString(), "IncreaseJumpDistance");
 
-            // Page 4: cameras
+            // Page 5: cameras
             for (var i = 0; i < cameras.Count && i < SlotsPerPage; i++)
-                BlockSlot(3, i, cameras[i], "View");
+                BlockSlot(4, i, cameras[i], "View");
 
-            // Page 5: systems
+            // Page 6: systems
             next = 0;
             var systems = thrusterTypes
                 .Select(t => "Thruster:" + t)
@@ -376,7 +479,6 @@ namespace ClientPlugin.Organizer
                     new[]
                     {
                         BlockKind.Wheel,
-                        BlockKind.GasGenerator,
                         BlockKind.Turret,
                         BlockKind.Gun,
                         BlockKind.Decoy,
@@ -387,14 +489,16 @@ namespace ClientPlugin.Organizer
             foreach (var key in systems)
             {
                 if (next < SlotsPerPage && groups.ContainsKey(key))
-                    Slot(4, next++, key, "OnOff");
+                    Slot(5, next++, key, "OnOff");
             }
 
             // Page 9: repair and emergency. The repair projector is always the last slot.
             Slot(8, 0, BlockKind.Welder.ToString(), "OnOff");
             Slot(8, 4, BlockKind.Parachute.ToString(), "AutoDeploy");
             Slot(8, 6, BlockKind.Parachute.ToString(), "Open");
-            var remoteControl = ship.Blocks.FirstOrDefault(b => b.Kind == BlockKind.RemoteControl);
+            var remoteControl = ship.Blocks.FirstOrDefault(b =>
+                b.Kind == BlockKind.RemoteControl && b != cockpit
+            );
             if (remoteControl != null)
             {
                 // The remote control gets the toolbar before this button is added

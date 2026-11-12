@@ -10,6 +10,7 @@ using Sandbox.Game.Entities.Cube;
 using Sandbox.Game.GameSystems;
 using Sandbox.Game.Screens.Helpers;
 using VRage.Game;
+using VRage.ObjectBuilders;
 using VRage.ObjectBuilders.Private;
 using VRage.Utils;
 using VRageMath;
@@ -267,6 +268,17 @@ namespace ClientPlugin.Organizer
 
         private static MyToolbarItem CreateItem(MyTerminalBlock owner, SlotPlan slot)
         {
+            if (slot.WeaponTypeId != null)
+            {
+                var weaponItem =
+                    MyObjectBuilderSerializerKeen.CreateNewObject<MyObjectBuilder_ToolbarItemWeapon>();
+                weaponItem.DefinitionId = new SerializableDefinitionId(
+                    MyObjectBuilderType.Parse("MyObjectBuilder_" + slot.WeaponTypeId),
+                    slot.WeaponSubtypeId
+                );
+                return MyToolbarItemFactory.CreateToolbarItem(weaponItem);
+            }
+
             if (slot.GroupName != null)
             {
                 var groupItem =

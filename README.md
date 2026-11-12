@@ -135,7 +135,8 @@ What it does, in this order:
    `Projector Repair`, and the main cockpit `Cockpit Main` if there are more cockpits.
    Sides are as seen from the main cockpit: `Front`, `Back`, `Left`, `Right`, `Top`, `Bottom`.
 4. **Groups** the blocks used together and **hides them from the block list**: thrusters
-   (all, by type and by thrust direction, like `Hydrogen Thrusters (Up)`), gyroscopes,
+   (all, by type and by thrust direction, like `Hydrogen Thrusters (Up)`, and the braking
+   thrusters of all types as `Thrusters (Backward)`), gyroscopes,
    batteries, lights, spotlights, drills, welders, grinders, wheels, cameras, landing gears,
    tanks by gas, generators, engines, reactors, solar panels, wind turbines, cargo containers,
    parachutes, turrets, guns, decoys, doors, air vents and jump drives. Two or more
@@ -144,20 +145,36 @@ What it does, in this order:
 6. **Hides blocks from the inventory screen** if they are not reachable from the ship's
    largest cargo container through conveyors, or if items only pass through them: tools,
    connectors, ejectors, collectors, sorters and gas tanks.
-7. **Sets up the main cockpit's toolbar**. Pages 1 and 2 are always rewritten, the other
-   pages below only if the ship has something for them. All other pages stay as they are.
+7. **Sets up the main cockpit's toolbar**. Page 1 is always rewritten, the other pages
+   below only if the ship has something for them. All other pages stay as they are.
 
    | Page | Purpose | Slots |
    |---|---|---|
-   | 1 | Flight and operation | Tools ON/OFF, lift thruster override down and up, front, back and bottom camera; 7: lights, 8: spotlights, 9: lock the connector (or the landing gears) |
-   | 2 | Parked | 1: connector lock, 2: landing gear lock, 3: battery recharge, 4: hydrogen tank stockpile, 5: oxygen tank stockpile, 6: thrusters, 7: gyroscopes, 8: hydrogen engines, 9: reactors |
-   | 3 | Jump | Jump, recharge, ON/OFF, jump distance down and up |
-   | 4 | Cameras | View of each camera |
-   | 5 | Systems | ON/OFF of each thruster type, wheels, O2/H2 generators, turrets, guns, decoys, solar panels, wind turbines |
+   | 1 | Flight and operation | By the role of the ship, see below; 7: lights, 8: spotlights, 9: lock the connector (or the landing gears) |
+   | 2 | Docking | Each connector's docking camera followed by its lock; 9: landing gear lock |
+   | 3 | Docked | 1: battery recharge, 2: hydrogen tank stockpile, 3: oxygen tank stockpile, 4: thrusters, 5: gyroscopes, 6: hydrogen engines, 7: reactors, 8: O2/H2 generators |
+   | 4 | Jump | Jump, recharge, ON/OFF, jump distance down and up |
+   | 5 | Cameras | View of each camera |
+   | 6 | Systems | ON/OFF of each thruster type, wheels, turrets, guns, decoys, solar panels, wind turbines |
    | 9 | Repair and emergency | 1: welders, 5: parachute auto deploy, 7: open or close the parachutes, 8: take control of the remote control, 9: repair projector ON/OFF |
+
+   The first six slots of page 1 depend on the role of the ship:
+
+   | Role | Slots 1 to 6 of page 1, in this order |
+   |---|---|
+   | Tool ship (has drills, welders or grinders) | The main tool to work with by the mouse buttons, tools ON/OFF, reverse thrusters ON/OFF, lift thruster override down and up, docking cameras |
+   | Fighter (has fixed weapons, no tools) | The main weapon, up to two secondary weapons, reverse thrusters ON/OFF, the forward cameras to aim with their zoom, lift thruster override down and up if there is room. Slot 9 stays empty: all docking is on page 2. |
+   | Any other ship | Reverse thrusters ON/OFF, lift thruster override down and up, docking cameras |
+
+   The main tool or weapon is the block type the ship has the most of. The reverse
+   thrusters are the ones braking the ship: turn them off to cruise without burning fuel.
+   On a ship with more thruster types they are in the `Thrusters (Backward)` group. A
+   connector's docking camera is the nearest camera facing the same side as the connector,
+   to help aligning it. Docking cameras which do not fit on page 1 are still on page 2.
 
 8. **Copies the cockpit's toolbar to the remote control** as it is, then adds the cockpit's
    button which takes control of the remote control (page 9, slot 8).
+   A ship without a cockpit gets all this on its remote control instead.
 9. **Reloads the repair projector** with the ship as it is now, aligned with the ship.
    The repair projector is the projector with "repair" in its name, or the one projecting
    a blueprint which is mostly built already. It has to be working for this.

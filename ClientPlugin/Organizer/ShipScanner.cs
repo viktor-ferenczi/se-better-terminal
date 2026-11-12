@@ -115,9 +115,11 @@ namespace ClientPlugin.Organizer
                 .OfType<MyShipController>()
                 .Where(c => !(c is MyRemoteControl) && c.BlockDefinition.EnableShipControl)
                 .ToList();
+            // A drone has no cockpit, the sides of the ship are those of its remote control then
             return cockpits.FirstOrDefault(c => c.IsMainCockpit)
                 ?? cockpits.FirstOrDefault(c => c.CubeGrid == MainGrid)
-                ?? cockpits.FirstOrDefault();
+                ?? cockpits.FirstOrDefault()
+                ?? blocks.OfType<MyRemoteControl>().FirstOrDefault();
         }
 
         // The inventory standing for the ship's main conveyor network: its largest cargo container
