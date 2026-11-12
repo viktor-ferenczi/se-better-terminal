@@ -1,4 +1,5 @@
 using System;
+using ClientPlugin.Organizer;
 using System.Collections.Generic;
 using System.Text;
 using Sandbox.Game.Entities.Cube;
@@ -35,6 +36,8 @@ namespace ClientPlugin.Logic
             ToggleShowOnHud,
             InvokeTerminalAction,
             ToggleBoolProperty,
+            OrganizeShip,
+            RevertOrganizing,
         }
 
         private class ContextMenuItemData
@@ -223,6 +226,25 @@ namespace ClientPlugin.Logic
                         new StringBuilder(toggleText),
                         "Toggle whether this block uses conveyor system for inventory",
                         userData: new ContextMenuItemData { Action = ContextMenuAction.ToggleUseInventory, Block = block }
+                    );
+                }
+            }
+
+            // Ship organizer
+            if (Config.Current.EnableShipOrganizer)
+            {
+                contextMenu.AddItem(
+                    new StringBuilder("Organize Ship"),
+                    "Rename, group and hide the blocks of the ship and set up its cockpit toolbar. Saves a backup first.",
+                    userData: new ContextMenuItemData { Action = ContextMenuAction.OrganizeShip, Block = block }
+                );
+
+                if (ShipOrganizer.HasBackup(block.CubeGrid))
+                {
+                    contextMenu.AddItem(
+                        new StringBuilder("Revert Organizing"),
+                        "Restore the ship from the backup made before it was last organized",
+                        userData: new ContextMenuItemData { Action = ContextMenuAction.RevertOrganizing, Block = block }
                     );
                 }
             }
@@ -517,6 +539,14 @@ namespace ClientPlugin.Logic
 
                 case ContextMenuAction.InvokeTerminalAction:
                     itemData.TerminalAction?.Apply(block);
+                    break;
+
+                case ContextMenuAction.OrganizeShip:
+                    OrganizerCommands.ConfirmOrganize(block.CubeGrid);
+                    break;
+
+                case ContextMenuAction.RevertOrganizing:
+                    OrganizerCommands.ConfirmRevert(block.CubeGrid);
                     break;
 
                 case ContextMenuAction.ToggleBoolProperty:
