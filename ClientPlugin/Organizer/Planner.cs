@@ -42,7 +42,7 @@ namespace ClientPlugin.Organizer
             { BlockKind.AirVent, "Air Vent" },
         };
 
-        // Hidden from the terminal's block list without a group: nothing to set up there
+        // Hidden from the terminal's block list without a group: rarely needed there
         private static readonly HashSet<BlockKind> HiddenKinds = new HashSet<BlockKind>
         {
             BlockKind.Cockpit,

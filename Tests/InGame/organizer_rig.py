@@ -5,7 +5,7 @@ of a ship with a cockpit or a remote control, batteries and thrusters (default: 
 Pastes the ship, organizes it with the /bt chat command, checks the result, reverts
 and checks that the ship is back to what it was. Prints PASS or the failed checks.
 
-    python3 organizer_rig.py --port 25350 --world <save folder> [--blueprint Bear]
+    python3 organizer_rig.py --port <Remote port> --world <save folder> [--blueprint Bear]
 
 se_remote.py of the se-remote skill must be importable (PYTHONPATH).
 """
@@ -159,7 +159,7 @@ def main():
         )
     if kind("Cockpit"):
         check(not after[cockpit]["terminal"], "the cockpit is hidden from the terminal")
-    # Hidden without a group: nothing to set up there
+    # Hidden without a group
     refills = [
         i for i in kind("MedicalRoom") if "RefillStation" in before[i]["subtype"]
     ]
