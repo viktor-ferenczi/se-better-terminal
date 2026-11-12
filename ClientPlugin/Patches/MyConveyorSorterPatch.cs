@@ -17,21 +17,25 @@ namespace ClientPlugin.Patches
             // Double-click on "Add new filter" list item to add it to active filters
             if (MyConveyorSorter.candidates != null)
             {
-                MyConveyorSorter.candidates.ItemDoubleClicked =
-                    (MyConveyorSorter block, List<MyGuiControlListbox.Item> items) =>
-                    {
-                        block.AddToCurrentList();
-                    };
+                MyConveyorSorter.candidates.ItemDoubleClicked = (
+                    MyConveyorSorter block,
+                    List<MyGuiControlListbox.Item> items
+                ) =>
+                {
+                    block.AddToCurrentList();
+                };
             }
 
             // Double-click on "Active filters" list item to remove it
             if (MyConveyorSorter.currentList != null)
             {
-                MyConveyorSorter.currentList.ItemDoubleClicked =
-                    (MyConveyorSorter block, List<MyGuiControlListbox.Item> items) =>
-                    {
-                        block.RemoveFromCurrentList();
-                    };
+                MyConveyorSorter.currentList.ItemDoubleClicked = (
+                    MyConveyorSorter block,
+                    List<MyGuiControlListbox.Item> items
+                ) =>
+                {
+                    block.RemoveFromCurrentList();
+                };
             }
         }
     }

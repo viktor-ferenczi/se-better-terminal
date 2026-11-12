@@ -3,18 +3,18 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using Sandbox.Game.Entities.Cube;
-using Sandbox.Game.GameSystems;
-using Sandbox.Game.Screens.Helpers;
-using Sandbox.Graphics.GUI;
-using VRage.Utils;
 using ClientPlugin.Extensions;
 using Sandbox.Common.ObjectBuilders;
+using Sandbox.Game.Entities.Cube;
+using Sandbox.Game.GameSystems;
 using Sandbox.Game.Gui;
 using Sandbox.Game.Multiplayer;
+using Sandbox.Game.Screens.Helpers;
 using Sandbox.Graphics;
+using Sandbox.Graphics.GUI;
 using Sandbox.ModAPI;
 using VRage.Input;
+using VRage.Utils;
 using VRageMath;
 
 namespace ClientPlugin.Logic
@@ -36,11 +36,14 @@ namespace ClientPlugin.Logic
         private MyGuiControlListbox blockListbox;
 
         private MyGuiControlCombobox modeSelectorCombobox;
-        private readonly Dictionary<int, object> modeSelectorItemData = new Dictionary<int, object>();
+        private readonly Dictionary<int, object> modeSelectorItemData =
+            new Dictionary<int, object>();
 
         private readonly HashSet<string> blockTypes = new HashSet<string>();
-        private readonly Dictionary<long, HashSet<string>> groupsByBlock = new Dictionary<long, HashSet<string>>();
-        private readonly Dictionary<string, HashSet<long>> blocksByGroup = new Dictionary<string, HashSet<long>>();
+        private readonly Dictionary<long, HashSet<string>> groupsByBlock =
+            new Dictionary<long, HashSet<string>>();
+        private readonly Dictionary<string, HashSet<long>> blocksByGroup =
+            new Dictionary<string, HashSet<long>>();
 
         // Context menu support
         private ContextMenuLogic contextMenuLogic;
@@ -57,12 +60,18 @@ namespace ClientPlugin.Logic
                 // This happens if EnableBlockFilter is false
                 if (modeSelectorCombobox == null)
                     return BlockListMode.Default;
-                
-                return modeSelectorItemData.GetValueOrDefault((int)modeSelectorCombobox.GetSelectedKey(), BlockListMode.Default);
+
+                return modeSelectorItemData.GetValueOrDefault(
+                    (int)modeSelectorCombobox.GetSelectedKey(),
+                    BlockListMode.Default
+                );
             }
         }
 
-        public ControlPanelLogic(MyTerminalControlPanel controlPanel, IMyGuiControlsParent controlsParent)
+        public ControlPanelLogic(
+            MyTerminalControlPanel controlPanel,
+            IMyGuiControlsParent controlsParent
+        )
         {
             Debug.Assert(controlPanel != null);
             Debug.Assert(controlsParent != null);
@@ -70,7 +79,7 @@ namespace ClientPlugin.Logic
             this.controlPanel = controlPanel;
 
             PrepareModeSelector(controlsParent);
-            
+
             if (Config.Current.EnableContextMenu)
             {
                 contextMenuLogic = new ContextMenuLogic(controlPanel);
@@ -84,20 +93,25 @@ namespace ClientPlugin.Logic
 
         private void PrepareModeSelector(IMyGuiControlsParent controlsParent)
         {
-            blockListbox = (MyGuiControlListbox)controlsParent.Controls.GetControlByName("FunctionalBlockListbox");
-            
+            blockListbox = (MyGuiControlListbox)
+                controlsParent.Controls.GetControlByName("FunctionalBlockListbox");
+
             if (blockFilterInitialized || !Config.Current.EnableBlockFilter)
                 return;
 
             showDefaultNames = false;
 
-            showDefaultNamesCheckbox = (MyGuiControlCheckbox)controlsParent.Controls.GetControlByName("ShowDefaultNames");
+            showDefaultNamesCheckbox = (MyGuiControlCheckbox)
+                controlsParent.Controls.GetControlByName("ShowDefaultNames");
             showDefaultNamesCheckbox.IsChecked = showDefaultNames;
             showDefaultNamesCheckbox.Enabled = true;
             showDefaultNamesCheckbox.IsCheckedChanged += showDefaultNames_Clicked;
-            showDefaultNamesCheckbox.SetToolTip(MyStringId.GetOrCompute("Show and search original block names"));
+            showDefaultNamesCheckbox.SetToolTip(
+                MyStringId.GetOrCompute("Show and search original block names")
+            );
 
-            modeSelectorCombobox = (MyGuiControlCombobox)controlsParent.Controls.GetControlByName("ModeSelector");
+            modeSelectorCombobox = (MyGuiControlCombobox)
+                controlsParent.Controls.GetControlByName("ModeSelector");
             modeSelectorCombobox.Enabled = true;
             modeSelectorCombobox.SelectedItemChanged += OnModeChanged;
             modeSelectorCombobox.SetToolTip(MyStringId.GetOrCompute("Block list mode selector"));
@@ -107,7 +121,12 @@ namespace ClientPlugin.Logic
 
         public void PrepareGroupRenaming()
         {
-            if (groupRenamingInitialized || !Config.Current.EnableGroupRenaming || RenameGroupButton == null || controlPanel.m_groupName == null)
+            if (
+                groupRenamingInitialized
+                || !Config.Current.EnableGroupRenaming
+                || RenameGroupButton == null
+                || controlPanel.m_groupName == null
+            )
                 return;
 
             originalGroupName = "";
@@ -128,9 +147,11 @@ namespace ClientPlugin.Logic
             if (groupRenamingInitialized)
             {
                 RenameGroupButton.Enabled = false;
-                RenameGroupButton.SetToolTip(groupName == ""
-                    ? MyStringId.GetOrCompute("Select a block group to rename it")
-                    : MyStringId.GetOrCompute($"Rename group: {groupName}"));
+                RenameGroupButton.SetToolTip(
+                    groupName == ""
+                        ? MyStringId.GetOrCompute("Select a block group to rename it")
+                        : MyStringId.GetOrCompute($"Rename group: {groupName}")
+                );
             }
         }
 
@@ -217,7 +238,7 @@ namespace ClientPlugin.Logic
         {
             if (!Config.Current.EnableBlockFilter)
                 return;
-                
+
             var previousData = ModeSelectorData;
 
             modeSelectorCombobox.ClearItems();
@@ -246,15 +267,20 @@ namespace ClientPlugin.Logic
                     switch (key)
                     {
                         case BlockListMode mode:
-                            selected = previousData is BlockListMode previousMode && mode == previousMode;
+                            selected =
+                                previousData is BlockListMode previousMode && mode == previousMode;
                             break;
 
                         case MyBlockGroup group:
-                            selected = previousData is MyBlockGroup previousGroup && group.Name == previousGroup.Name;
+                            selected =
+                                previousData is MyBlockGroup previousGroup
+                                && group.Name == previousGroup.Name;
                             break;
 
                         case string blockType:
-                            selected = previousData is string previousBlockType && blockType == previousBlockType;
+                            selected =
+                                previousData is string previousBlockType
+                                && blockType == previousBlockType;
                             break;
                     }
 
@@ -319,7 +345,9 @@ namespace ClientPlugin.Logic
             if (modeSelectorItemData.Count == 0)
                 UpdateModeSelector();
 
-            var pattern = string.IsNullOrEmpty(text) ? null : text.ToLower().Split(' ').Where(part => !string.IsNullOrEmpty(part)).ToArray();
+            var pattern = string.IsNullOrEmpty(text)
+                ? null
+                : text.ToLower().Split(' ').Where(part => !string.IsNullOrEmpty(part)).ToArray();
             if (pattern != null && pattern.Length == 0)
             {
                 pattern = null;
@@ -362,8 +390,14 @@ namespace ClientPlugin.Logic
                 if (!(item.UserData is MyTerminalBlock terminalBlock))
                     continue;
 
-                var visible = (terminalBlock.ShowInTerminal || showHiddenBlocks || (defaultMode && terminalBlock == originalBlock)) &&
-                              IsBlockShownInMode(terminalBlock, modeSelectorData) && IsMatchingItem(item, pattern);
+                var visible =
+                    (
+                        terminalBlock.ShowInTerminal
+                        || showHiddenBlocks
+                        || (defaultMode && terminalBlock == originalBlock)
+                    )
+                    && IsBlockShownInMode(terminalBlock, modeSelectorData)
+                    && IsMatchingItem(item, pattern);
 
                 item.Visible = visible;
                 if (!visible && !defaultMode)
@@ -383,10 +417,14 @@ namespace ClientPlugin.Logic
                 if (!(item.UserData is MyBlockGroup blockGroup))
                     continue;
 
-                item.Visible = visibleGroupNames.Contains(blockGroup.Name.ToString()) && IsMatchingItem(item, pattern);
+                item.Visible =
+                    visibleGroupNames.Contains(blockGroup.Name.ToString())
+                    && IsMatchingItem(item, pattern);
             }
 
-            var firstSelectedVisibleItem = blockListbox.SelectedItems.FirstOrDefault(item => item.Visible);
+            var firstSelectedVisibleItem = blockListbox.SelectedItems.FirstOrDefault(item =>
+                item.Visible
+            );
             var firstSelectedVisibleItemPosition = -1;
             var visibleItemPosition = 0;
             foreach (var item in blockListbox.Items)
@@ -414,7 +452,8 @@ namespace ClientPlugin.Logic
             if (pattern == null)
                 return true;
 
-            var tooltip = item.ToolTip.ToolTips.Count == 0 ? "" : item.ToolTip.ToolTips[0].Text.ToString();
+            var tooltip =
+                item.ToolTip.ToolTips.Count == 0 ? "" : item.ToolTip.ToolTips[0].Text.ToString();
             var text = $@"{item.Text} {tooltip}".ToLower();
 
             foreach (var part in pattern)
@@ -437,25 +476,39 @@ namespace ClientPlugin.Logic
                             break;
 
                         case BlockListMode.ShipOrStation:
-                            return terminalBlock.CubeGrid.IsSameConstructAs(controlPanel.m_originalBlock.CubeGrid);
+                            return terminalBlock.CubeGrid.IsSameConstructAs(
+                                controlPanel.m_originalBlock.CubeGrid
+                            );
 
                         case BlockListMode.Subgrid:
-                            return terminalBlock.CubeGrid.EntityId == controlPanel.m_originalBlock.CubeGrid.EntityId;
+                            return terminalBlock.CubeGrid.EntityId
+                                == controlPanel.m_originalBlock.CubeGrid.EntityId;
 
                         case BlockListMode.Ungrouped:
-                            return !groupsByBlock.TryGetValue(terminalBlock.EntityId, out var groups1) || groups1.Count == 0;
+                            return !groupsByBlock.TryGetValue(
+                                    terminalBlock.EntityId,
+                                    out var groups1
+                                )
+                                || groups1.Count == 0;
 
                         case BlockListMode.Multigrouped:
-                            return groupsByBlock.TryGetValue(terminalBlock.EntityId, out var groups2) && groups2.Count > 1;
+                            return groupsByBlock.TryGetValue(
+                                    terminalBlock.EntityId,
+                                    out var groups2
+                                )
+                                && groups2.Count > 1;
 
                         case BlockListMode.Damaged:
-                            return terminalBlock.SlimBlock.Integrity < terminalBlock.SlimBlock.MaxIntegrity;
+                            return terminalBlock.SlimBlock.Integrity
+                                < terminalBlock.SlimBlock.MaxIntegrity;
 
                         case BlockListMode.Disabled:
-                            return terminalBlock is MyFunctionalBlock functionalBlock1 && !functionalBlock1.Enabled;
+                            return terminalBlock is MyFunctionalBlock functionalBlock1
+                                && !functionalBlock1.Enabled;
 
                         case BlockListMode.Enabled:
-                            return terminalBlock is MyFunctionalBlock functionalBlock2 && functionalBlock2.Enabled;
+                            return terminalBlock is MyFunctionalBlock functionalBlock2
+                                && functionalBlock2.Enabled;
 
                         case BlockListMode.VisibleOnHud:
                             return terminalBlock.ShowOnHUD;
@@ -464,7 +517,8 @@ namespace ClientPlugin.Logic
                     return true;
 
                 case MyBlockGroup blockGroup:
-                    return groupsByBlock.TryGetValue(terminalBlock.EntityId, out var groupNames) && groupNames.Contains(blockGroup.Name.ToString());
+                    return groupsByBlock.TryGetValue(terminalBlock.EntityId, out var groupNames)
+                        && groupNames.Contains(blockGroup.Name.ToString());
 
                 case string blockTypeName:
                     return terminalBlock.BlockDefinition.DisplayNameText == blockTypeName;
@@ -525,7 +579,12 @@ namespace ClientPlugin.Logic
         public void BlockAdded(MyTerminalBlock myTerminalBlock)
         {
             RegisterBlock(myTerminalBlock);
-            var visible = (myTerminalBlock == controlPanel.m_originalBlock || myTerminalBlock.ShowInTerminal || MyTerminalControlPanel.m_showAllTerminalBlocks) && IsBlockShownInMode(myTerminalBlock, ModeSelectorData);
+            var visible =
+                (
+                    myTerminalBlock == controlPanel.m_originalBlock
+                    || myTerminalBlock.ShowInTerminal
+                    || MyTerminalControlPanel.m_showAllTerminalBlocks
+                ) && IsBlockShownInMode(myTerminalBlock, ModeSelectorData);
             controlPanel.AddBlockToList(myTerminalBlock, visible);
         }
 
@@ -547,12 +606,20 @@ namespace ClientPlugin.Logic
             foreach (var terminalBlock in blocks)
             {
                 RegisterBlock(terminalBlock);
-                var visible = (terminalBlock == originalBlock || terminalBlock.ShowInTerminal || showAllTerminalBlocks) && IsBlockShownInMode(terminalBlock, modeSelectorData);
+                var visible =
+                    (
+                        terminalBlock == originalBlock
+                        || terminalBlock.ShowInTerminal
+                        || showAllTerminalBlocks
+                    ) && IsBlockShownInMode(terminalBlock, modeSelectorData);
                 controlPanel.AddBlockToList(terminalBlock, visible);
             }
         }
 
-        public void UpdateItemAppearance_DefaultNameImplementation(MyTerminalBlock block, MyGuiControlListbox.Item item)
+        public void UpdateItemAppearance_DefaultNameImplementation(
+            MyTerminalBlock block,
+            MyGuiControlListbox.Item item
+        )
         {
             var itemText = item.Text;
             if (Config.Current.EnableBlockFilter && showDefaultNames)
@@ -570,10 +637,11 @@ namespace ClientPlugin.Logic
                 return;
 
             var newName = groupNameTextbox.Text.Trim();
-            RenameGroupButton.Enabled = controlPanel.m_groupDelete.Enabled &&
-                                        originalGroupName != "" &&
-                                        newName != originalGroupName &&
-                                        newName.Trim() != "";
+            RenameGroupButton.Enabled =
+                controlPanel.m_groupDelete.Enabled
+                && originalGroupName != ""
+                && newName != originalGroupName
+                && newName.Trim() != "";
         }
 
         public void AfterSelectBlocks()
@@ -583,7 +651,9 @@ namespace ClientPlugin.Logic
                 PrepareGroupRenaming();
 
                 var currentGroups = controlPanel.m_currentGroups;
-                SetOriginalGroupName(currentGroups.Count == 1 ? currentGroups[0].Name.ToString().Trim() : "");
+                SetOriginalGroupName(
+                    currentGroups.Count == 1 ? currentGroups[0].Name.ToString().Trim() : ""
+                );
             }
         }
 
@@ -607,10 +677,12 @@ namespace ClientPlugin.Logic
             var terminalSystem = controlPanel.TerminalSystem;
             if (terminalSystem?.Blocks == null || terminalSystem.BlockGroups == null)
             {
-                MyLog.Default.Info("BetterTerminal: controlPanel.TerminalSystem is null or has no Blocks or BlockGroups");
+                MyLog.Default.Info(
+                    "BetterTerminal: controlPanel.TerminalSystem is null or has no Blocks or BlockGroups"
+                );
                 return;
             }
-            
+
             // Make sure no group with that new name exists
             foreach (var blockGroup in terminalSystem.BlockGroups)
             {
@@ -620,7 +692,9 @@ namespace ClientPlugin.Logic
                     MyGuiSandbox.AddScreen(
                         MyGuiSandbox.CreateMessageBox(
                             messageText: new StringBuilder($"Group already exists: {newName}"),
-                            messageCaption: new StringBuilder("Better Terminal: Error")));
+                            messageCaption: new StringBuilder("Better Terminal: Error")
+                        )
+                    );
                     return;
                 }
             }
@@ -634,7 +708,10 @@ namespace ClientPlugin.Logic
             MyLog.Default.Info($"BetterTerminal: Saving as new group: {newName}");
 #endif
             controlPanel.groupSave_ButtonClicked(null);
-            if (controlPanel.m_currentGroups.Count != 1 || controlPanel.m_currentGroups[0].Name.ToString() != newName)
+            if (
+                controlPanel.m_currentGroups.Count != 1
+                || controlPanel.m_currentGroups[0].Name.ToString() != newName
+            )
             {
                 MyLog.Default.Warning($"BetterTerminal: Failed to create new group: {newName}");
                 return;
@@ -650,28 +727,37 @@ namespace ClientPlugin.Logic
                 var toolbarBuilder = toolbar.GetObjectBuilder();
                 var modified = false;
                 var isServer = Sync.IsServer;
-                
+
                 foreach (var slotBuilder in toolbarBuilder.Slots)
                 {
-                    if (!(slotBuilder.Data is MyObjectBuilder_ToolbarItemTerminalGroup toolbarItemTerminalGroupBuilder))
+                    if (
+                        !(
+                            slotBuilder.Data
+                            is MyObjectBuilder_ToolbarItemTerminalGroup toolbarItemTerminalGroupBuilder
+                        )
+                    )
                         continue;
 
                     if (toolbarItemTerminalGroupBuilder.GroupName != oldName)
                         continue;
 
 #if DEBUG
-                    MyLog.Default.Info($"BetterTerminal: Redirecting group in toolbar slot {slotBuilder.Index} of {terminalBlock.GetDebugName()}");
+                    MyLog.Default.Info(
+                        $"BetterTerminal: Redirecting group in toolbar slot {slotBuilder.Index} of {terminalBlock.GetDebugName()}"
+                    );
 #endif
                     toolbarItemTerminalGroupBuilder.GroupName = newName;
                     modified = true;
 
                     if (!isServer)
                     {
-                        var toolbarItem = MyToolbarItemFactory.CreateToolbarItem(toolbarItemTerminalGroupBuilder);
+                        var toolbarItem = MyToolbarItemFactory.CreateToolbarItem(
+                            toolbarItemTerminalGroupBuilder
+                        );
                         toolbar.SetItemAtIndex(slotBuilder.Index, toolbarItem);
                     }
                 }
-                
+
                 // Re-initialize the toolbar with the modified builder to persist changes
                 if (isServer && modified)
                 {
@@ -690,8 +776,8 @@ namespace ClientPlugin.Logic
 #endif
 
             controlPanel.RefreshBlockList();
-            
-            // Select the new group in the terminal list 
+
+            // Select the new group in the terminal list
             // blockListbox is available only if EnableBlockFilter is true
             blockSearch_TextChanged(controlPanel.m_searchBox.SearchText, true);
             foreach (var item in blockListbox.Items)
@@ -724,15 +810,20 @@ namespace ClientPlugin.Logic
 
         public void HandleBlockListInput()
         {
-            if (!Config.Current.EnableContextMenu && Config.Current.DoubleClickAction == DoubleClickAction.None)
+            if (
+                !Config.Current.EnableContextMenu
+                && Config.Current.DoubleClickAction == DoubleClickAction.None
+            )
                 return;
 
             if (blockListbox == null || !blockListbox.IsMouseOver)
                 return;
 
             // Check double-click timeout
-            if (doubleClickStarted.HasValue && 
-                (MyGuiManager.TotalTimeInMilliseconds - doubleClickStarted.Value) >= 500)
+            if (
+                doubleClickStarted.HasValue
+                && (MyGuiManager.TotalTimeInMilliseconds - doubleClickStarted.Value) >= 500
+            )
             {
                 doubleClickStarted = null;
                 doubleClickBlock = null;
@@ -744,15 +835,19 @@ namespace ClientPlugin.Logic
                 return;
 
             // Phase 1: On right-click press, prepare the context menu (populate it and mark as pending)
-            if (Config.Current.EnableContextMenu && 
-                MyInput.Static.IsNewMousePressed(MyMouseButtonsEnum.Right))
+            if (
+                Config.Current.EnableContextMenu
+                && MyInput.Static.IsNewMousePressed(MyMouseButtonsEnum.Right)
+            )
             {
                 contextMenuLogic?.PrepareContextMenu(block);
             }
 
             // Handle double-click detection
-            if (Config.Current.DoubleClickAction != DoubleClickAction.None && 
-                MyInput.Static.IsNewPrimaryButtonPressed())
+            if (
+                Config.Current.DoubleClickAction != DoubleClickAction.None
+                && MyInput.Static.IsNewPrimaryButtonPressed()
+            )
             {
                 HandleDoubleClick(block);
             }
@@ -779,9 +874,11 @@ namespace ClientPlugin.Logic
                 doubleClickFirstPosition = MyGuiManager.MouseCursorPosition;
                 doubleClickBlock = block;
             }
-            else if (doubleClickBlock == block &&
-                     (MyGuiManager.TotalTimeInMilliseconds - doubleClickStarted.Value) <= 500 &&
-                     (doubleClickFirstPosition - MyGuiManager.MouseCursorPosition).Length() <= 0.005f)
+            else if (
+                doubleClickBlock == block
+                && (MyGuiManager.TotalTimeInMilliseconds - doubleClickStarted.Value) <= 500
+                && (doubleClickFirstPosition - MyGuiManager.MouseCursorPosition).Length() <= 0.005f
+            )
             {
                 // Second click within timeout and close to original position on same block
                 ExecuteDoubleClickAction(block);

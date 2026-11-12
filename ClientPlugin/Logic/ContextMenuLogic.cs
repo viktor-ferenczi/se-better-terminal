@@ -1,7 +1,7 @@
 using System;
-using ClientPlugin.Organizer;
 using System.Collections.Generic;
 using System.Text;
+using ClientPlugin.Organizer;
 using Sandbox.Game.Entities.Cube;
 using Sandbox.Game.Gui;
 using Sandbox.Graphics.GUI;
@@ -51,12 +51,18 @@ namespace ClientPlugin.Logic
         // Action IDs already covered by existing menu items
         private static readonly HashSet<string> SkippedActionIds = new HashSet<string>
         {
-            "OnOff", "OnOff_On", "OnOff_Off",
-            "ShowOnHUD", "ShowOnHUD_On", "ShowOnHUD_Off",
+            "OnOff",
+            "OnOff_On",
+            "OnOff_Off",
+            "ShowOnHUD",
+            "ShowOnHUD_On",
+            "ShowOnHUD_Off",
             "UseConveyor",
             "PreserveAspectRatio",
-            "Discharge_On", "Discharge_Off",
-            "Recharge_On", "Recharge_Off",
+            "Discharge_On",
+            "Discharge_Off",
+            "Recharge_On",
+            "Recharge_Off",
             "SwitchLock",
         };
 
@@ -71,7 +77,10 @@ namespace ClientPlugin.Logic
         };
 
         // Fix action display names: replace state labels with command verbs
-        private static readonly Dictionary<string, string> ActionNameFixes = new Dictionary<string, string>
+        private static readonly Dictionary<string, string> ActionNameFixes = new Dictionary<
+            string,
+            string
+        >
         {
             { "Closed", "Close" },
             { "Enabled", "Enable" },
@@ -107,7 +116,8 @@ namespace ClientPlugin.Logic
         private readonly List<ITerminalAction> actionBuffer = new List<ITerminalAction>();
         private readonly List<ITerminalProperty> propertyBuffer = new List<ITerminalProperty>();
         private readonly HashSet<string> actionIds = new HashSet<string>();
-        private readonly Dictionary<string, bool> boolPropertyValues = new Dictionary<string, bool>();
+        private readonly Dictionary<string, bool> boolPropertyValues =
+            new Dictionary<string, bool>();
 
         public ContextMenuLogic(MyTerminalControlPanel controlPanel)
         {
@@ -178,29 +188,46 @@ namespace ClientPlugin.Logic
                 contextMenu.AddItem(
                     new StringBuilder("Open Inventory"),
                     "Switch to the inventory screen for this block",
-                    userData: new ContextMenuItemData { Action = ContextMenuAction.OpenInventory, Block = block }
+                    userData: new ContextMenuItemData
+                    {
+                        Action = ContextMenuAction.OpenInventory,
+                        Block = block,
+                    }
                 );
             }
 
             // ON/OFF toggle (only for functional blocks)
-            if (Config.Current.ContextMenuShowOnOff && modApiBlock is IMyFunctionalBlock functionalBlock)
+            if (
+                Config.Current.ContextMenuShowOnOff
+                && modApiBlock is IMyFunctionalBlock functionalBlock
+            )
             {
                 var toggleText = functionalBlock.Enabled ? "Turn OFF" : "Turn ON";
                 contextMenu.AddItem(
                     new StringBuilder(toggleText),
                     "Toggle this block ON or OFF",
-                    userData: new ContextMenuItemData { Action = ContextMenuAction.ToggleOnOff, Block = block }
+                    userData: new ContextMenuItemData
+                    {
+                        Action = ContextMenuAction.ToggleOnOff,
+                        Block = block,
+                    }
                 );
             }
 
             // Terminal visibility toggle
             if (Config.Current.ContextMenuShowTerminal)
             {
-                var toggleText = modApiBlock.ShowInTerminal ? "Hide from Terminal" : "Show in Terminal";
+                var toggleText = modApiBlock.ShowInTerminal
+                    ? "Hide from Terminal"
+                    : "Show in Terminal";
                 contextMenu.AddItem(
                     new StringBuilder(toggleText),
                     "Toggle whether this block appears in the terminal list",
-                    userData: new ContextMenuItemData { Action = ContextMenuAction.ToggleShowInTerminal, Block = block }
+                    userData: new ContextMenuItemData
+                    {
+                        Action = ContextMenuAction.ToggleShowInTerminal,
+                        Block = block,
+                    }
                 );
             }
 
@@ -211,7 +238,11 @@ namespace ClientPlugin.Logic
                 contextMenu.AddItem(
                     new StringBuilder(toggleText),
                     "Toggle whether this block is shown on the HUD",
-                    userData: new ContextMenuItemData { Action = ContextMenuAction.ToggleShowOnHud, Block = block }
+                    userData: new ContextMenuItemData
+                    {
+                        Action = ContextMenuAction.ToggleShowOnHud,
+                        Block = block,
+                    }
                 );
             }
 
@@ -221,11 +252,17 @@ namespace ClientPlugin.Logic
                 var useConveyor = GetInventoryUseConveyorState(modApiBlock);
                 if (useConveyor.HasValue)
                 {
-                    var toggleText = useConveyor.Value ? "Disable Use Conveyor" : "Enable Use Conveyor";
+                    var toggleText = useConveyor.Value
+                        ? "Disable Use Conveyor"
+                        : "Enable Use Conveyor";
                     contextMenu.AddItem(
                         new StringBuilder(toggleText),
                         "Toggle whether this block uses conveyor system for inventory",
-                        userData: new ContextMenuItemData { Action = ContextMenuAction.ToggleUseInventory, Block = block }
+                        userData: new ContextMenuItemData
+                        {
+                            Action = ContextMenuAction.ToggleUseInventory,
+                            Block = block,
+                        }
                     );
                 }
             }
@@ -236,7 +273,11 @@ namespace ClientPlugin.Logic
                 contextMenu.AddItem(
                     new StringBuilder("Organize Ship"),
                     "Rename, group and hide the blocks of the ship and set up its cockpit toolbar. Saves a backup first.",
-                    userData: new ContextMenuItemData { Action = ContextMenuAction.OrganizeShip, Block = block }
+                    userData: new ContextMenuItemData
+                    {
+                        Action = ContextMenuAction.OrganizeShip,
+                        Block = block,
+                    }
                 );
 
                 if (ShipOrganizer.HasBackup(block.CubeGrid))
@@ -244,7 +285,11 @@ namespace ClientPlugin.Logic
                     contextMenu.AddItem(
                         new StringBuilder("Revert Organizing"),
                         "Restore the ship from the backup made before it was last organized",
-                        userData: new ContextMenuItemData { Action = ContextMenuAction.RevertOrganizing, Block = block }
+                        userData: new ContextMenuItemData
+                        {
+                            Action = ContextMenuAction.RevertOrganizing,
+                            Block = block,
+                        }
                     );
                 }
             }
@@ -324,7 +369,11 @@ namespace ClientPlugin.Logic
                 var filteredActions = new List<ITerminalAction>();
                 foreach (var action in actionBuffer)
                 {
-                    if (SkippedActionIds.Contains(action.Id) || action.Name == null || action.Name.Length == 0)
+                    if (
+                        SkippedActionIds.Contains(action.Id)
+                        || action.Name == null
+                        || action.Name.Length == 0
+                    )
                         continue;
 
                     if (action.Id.StartsWith("Increase") || action.Id.StartsWith("Decrease"))
@@ -334,11 +383,18 @@ namespace ClientPlugin.Logic
                         continue;
 
                     // Battery charge modes: skip the currently active mode
-                    if (currentChargeModeId != null && BatteryChargeModeIds.Contains(action.Id) && action.Id == currentChargeModeId)
+                    if (
+                        currentChargeModeId != null
+                        && BatteryChargeModeIds.Contains(action.Id)
+                        && action.Id == currentChargeModeId
+                    )
                         continue;
 
                     // Connector lock actions: show only the action relevant to the current state
-                    if (activeConnectorActionId != null && ConnectorLockActionIds.Contains(action.Id))
+                    if (
+                        activeConnectorActionId != null
+                        && ConnectorLockActionIds.Contains(action.Id)
+                    )
                     {
                         if (activeConnectorActionId == "*" || action.Id == activeConnectorActionId)
                             continue;
@@ -351,17 +407,26 @@ namespace ClientPlugin.Logic
                     // (the property is shown as a more informative toggle, e.g. "Disable Control Gyros"
                     // instead of the ambiguous "Control Gyros On/Off")
                     // Exception: battery charge modes and connector lock actions are handled separately
-                    if (Config.Current.ContextMenuShowToggles &&
-                        boolPropertyValues.ContainsKey(action.Id) &&
-                        !BatteryChargeModeIds.Contains(action.Id) &&
-                        !ConnectorLockActionIds.Contains(action.Id))
+                    if (
+                        Config.Current.ContextMenuShowToggles
+                        && boolPropertyValues.ContainsKey(action.Id)
+                        && !BatteryChargeModeIds.Contains(action.Id)
+                        && !ConnectorLockActionIds.Contains(action.Id)
+                    )
                         continue;
 
                     filteredActions.Add(action);
                 }
 
                 // Sort alphabetically by display name (case insensitive)
-                filteredActions.Sort((a, b) => string.Compare(FixActionName(a.Name.ToString()), FixActionName(b.Name.ToString()), StringComparison.OrdinalIgnoreCase));
+                filteredActions.Sort(
+                    (a, b) =>
+                        string.Compare(
+                            FixActionName(a.Name.ToString()),
+                            FixActionName(b.Name.ToString()),
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                );
 
                 foreach (var action in filteredActions)
                 {
@@ -407,8 +472,13 @@ namespace ClientPlugin.Logic
 
                     // Skip bool properties that have corresponding _On/_Off actions
                     // (already shown in the actions section, showing them as toggles is redundant)
-                    if (Config.Current.ContextMenuShowActions &&
-                        (actionIds.Contains(prop.Id + "_On") || actionIds.Contains(prop.Id + "_Off")))
+                    if (
+                        Config.Current.ContextMenuShowActions
+                        && (
+                            actionIds.Contains(prop.Id + "_On")
+                            || actionIds.Contains(prop.Id + "_Off")
+                        )
+                    )
                         continue;
 
                     var boolProp = prop as ITerminalProperty<bool>;
@@ -419,13 +489,23 @@ namespace ClientPlugin.Logic
                 }
 
                 // Sort alphabetically by formatted property name (case insensitive)
-                filteredToggles.Sort((a, b) => string.Compare(FormatPropertyName(a.Id), FormatPropertyName(b.Id), StringComparison.OrdinalIgnoreCase));
+                filteredToggles.Sort(
+                    (a, b) =>
+                        string.Compare(
+                            FormatPropertyName(a.Id),
+                            FormatPropertyName(b.Id),
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                );
 
                 foreach (var boolProp in filteredToggles)
                 {
-                    var currentValue = boolPropertyValues.TryGetValue(boolProp.Id, out var val) && val;
+                    var currentValue =
+                        boolPropertyValues.TryGetValue(boolProp.Id, out var val) && val;
                     var displayName = FormatPropertyName(boolProp.Id);
-                    var itemText = currentValue ? $"Disable {displayName}" : $"Enable {displayName}";
+                    var itemText = currentValue
+                        ? $"Disable {displayName}"
+                        : $"Enable {displayName}";
 
                     contextMenu.AddItem(
                         new StringBuilder(itemText),
@@ -504,7 +584,10 @@ namespace ClientPlugin.Logic
             return sb.ToString();
         }
 
-        private void OnContextMenuItemClicked(MyGuiControlContextMenu menu, MyGuiControlContextMenu.EventArgs args)
+        private void OnContextMenuItemClicked(
+            MyGuiControlContextMenu menu,
+            MyGuiControlContextMenu.EventArgs args
+        )
         {
             if (args.UserData is not ContextMenuItemData itemData)
                 return;
@@ -551,7 +634,10 @@ namespace ClientPlugin.Logic
 
                 case ContextMenuAction.ToggleBoolProperty:
                     if (itemData.BoolProperty != null)
-                        itemData.BoolProperty.SetValue(block, !itemData.BoolProperty.GetValue(block));
+                        itemData.BoolProperty.SetValue(
+                            block,
+                            !itemData.BoolProperty.GetValue(block)
+                        );
                     break;
             }
         }
@@ -598,13 +684,13 @@ namespace ClientPlugin.Logic
             // Try common interfaces that have UseConveyorSystem property
             if (block is IMyProductionBlock productionBlock)
                 return productionBlock.UseConveyorSystem;
-            
+
             if (block is IMyGasGenerator gasGenerator)
                 return gasGenerator.UseConveyorSystem;
-            
+
             if (block is IMyReactor reactor)
                 return reactor.UseConveyorSystem;
-            
+
             return null;
         }
 
