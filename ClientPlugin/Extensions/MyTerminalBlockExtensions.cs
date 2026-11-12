@@ -16,13 +16,14 @@ namespace ClientPlugin.Extensions
 {
     public static class MyTerminalBlockExtensions
     {
-        private static readonly ThreadLocal<StringBuilder> TooltipText = new ThreadLocal<StringBuilder>();
+        private static readonly ThreadLocal<StringBuilder> TooltipText =
+            new ThreadLocal<StringBuilder>();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string GetTooltipText(this MyTerminalBlock block)
         {
             var sb = TooltipText.Value ?? (TooltipText.Value = new StringBuilder());
-            
+
             sb.Clear();
             sb.Append("Custom name: ");
             sb.Append(block.GetSafeName());
@@ -37,7 +38,12 @@ namespace ClientPlugin.Extensions
                 sb.Append(grid.GetSafeName());
             }
 
-            var integrity = (int)Math.Round(100.0f * block.SlimBlock.Integrity / Math.Max(0.001f, block.SlimBlock.MaxIntegrity));
+            var integrity = (int)
+                Math.Round(
+                    100.0f
+                        * block.SlimBlock.Integrity
+                        / Math.Max(0.001f, block.SlimBlock.MaxIntegrity)
+                );
             sb.Append("\nIntegrity: ");
             sb.Append(integrity);
             sb.Append("%");
@@ -52,7 +58,6 @@ namespace ClientPlugin.Extensions
             sb.Append("\nBlock size in cubes: ");
             sb.Append(block.BlockDefinition.Size.Format());
 #endif
-            
             return sb.ToString();
         }
 
@@ -67,17 +72,23 @@ namespace ClientPlugin.Extensions
                 {
                     // Required since game version 1.208.014, because the default block names are now lazy-loaded
                     // The following lines were copied from the MyTerminalBlock.CustomName getter:
-                    if (block.m_defaultCustomName.Length == 0 && MySession.Static != null && MySession.Static.Ready)
+                    if (
+                        block.m_defaultCustomName.Length == 0
+                        && MySession.Static != null
+                        && MySession.Static.Ready
+                    )
                     {
                         block.LoadDefaultCustomName();
                     }
-                    
+
                     defaultName = block.m_defaultCustomName.ToString();
                     break;
                 }
                 catch (Exception e)
                 {
-                    MyLog.Default.Warning($"BetterTerminal: Prevented crash on dirty read of StringBuilder instance in AppendDefaultCustomName. This is HARMLESS and retried 10 times with a short delay. This issue affects only the Terminal dialog on clients and has no effect on servers. See #5; Exception: {e.Message}\n---\n{e.StackTrace}---\n");
+                    MyLog.Default.Warning(
+                        $"BetterTerminal: Prevented crash on dirty read of StringBuilder instance in AppendDefaultCustomName. This is HARMLESS and retried 10 times with a short delay. This issue affects only the Terminal dialog on clients and has no effect on servers. See #5; Exception: {e.Message}\n---\n{e.StackTrace}---\n"
+                    );
                     Thread.Sleep(1);
                 }
             }
@@ -86,8 +97,11 @@ namespace ClientPlugin.Extensions
             if (defaultName == null)
                 defaultName = "!See Better Terminal Issue #5!";
 
-            Debug.Assert(defaultName.Length != 0, "See the LoadDefaultCustomName call above, it did not work for some reason");
-            
+            Debug.Assert(
+                defaultName.Length != 0,
+                "See the LoadDefaultCustomName call above, it did not work for some reason"
+            );
+
             sb.Append(defaultName.TrimEnd());
             if (block is MyThrust thruster && thruster.GridThrustDirection != Vector3I.Zero)
             {

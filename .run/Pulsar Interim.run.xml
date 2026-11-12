@@ -12,7 +12,12 @@
     <option name="AUTO_ATTACH_CHILDREN" value="0" />
     <option name="RUNTIME_TYPE" value="netfw" />
     <method v="2">
-      <option name="Build" default="false" projectName="ClientPlugin" projectPath="$PROJECT_DIR$/ClientPlugin/ClientPlugin.csproj" />
+      <option
+        name="Build"
+        default="false"
+        projectName="ClientPlugin"
+        projectPath="$PROJECT_DIR$/ClientPlugin/ClientPlugin.csproj"
+      />
     </method>
   </configuration>
 </component>

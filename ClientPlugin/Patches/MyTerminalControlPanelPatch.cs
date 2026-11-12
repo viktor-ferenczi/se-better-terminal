@@ -25,10 +25,13 @@ namespace ClientPlugin.Patches
         // ReSharper disable once InconsistentNaming
         [HarmonyPrefix]
         [HarmonyPatch(nameof(MyTerminalControlPanel.Init))]
-        private static bool InitPrefix(MyTerminalControlPanel __instance, IMyGuiControlsParent controlsParent)
+        private static bool InitPrefix(
+            MyTerminalControlPanel __instance,
+            IMyGuiControlsParent controlsParent
+        )
         {
             Debug.Assert(__instance != null);
-            
+
             // Config conditions are inside the constructor
             logic = new ControlPanelLogic(__instance, controlsParent);
             return true;
@@ -94,7 +97,7 @@ namespace ClientPlugin.Patches
         {
             if (Config.Current.EnableGroupRenaming)
                 logic.PrepareGroupRenaming();
-            
+
             logic.UpdateModeSelector();
         }
 
@@ -144,7 +147,11 @@ namespace ClientPlugin.Patches
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch(nameof(MyTerminalControlPanel.blockSearch_TextChanged), typeof(string), typeof(bool))]
+        [HarmonyPatch(
+            nameof(MyTerminalControlPanel.blockSearch_TextChanged),
+            typeof(string),
+            typeof(bool)
+        )]
         private static bool blockSearch_TextChangedPrefix(string text, bool scrollToTop)
         {
             if (!Config.Current.EnableBlockFilter)
@@ -156,7 +163,10 @@ namespace ClientPlugin.Patches
 
         [HarmonyTranspiler]
         [HarmonyPatch(nameof(MyTerminalControlPanel.PopulateBlockList))]
-        private static IEnumerable<CodeInstruction> PopulateBlockListTranspiler(IEnumerable<CodeInstruction> code, MethodBase patchedMethod)
+        private static IEnumerable<CodeInstruction> PopulateBlockListTranspiler(
+            IEnumerable<CodeInstruction> code,
+            MethodBase patchedMethod
+        )
         {
             var il = code.ToList();
             il.RecordOriginalCode(patchedMethod);
@@ -165,7 +175,12 @@ namespace ClientPlugin.Patches
             // We replace the code between these two lines:
             // this.m_blockListbox.IsInBulkInsert = true;
             // this.m_blockListbox.IsInBulkInsert = false;
-            var bulkInsertSetters = il.FindAllIndex(ci => ci.opcode == OpCodes.Callvirt && ci.operand is MethodInfo mi && mi.Name == "set_IsInBulkInsert").ToArray();
+            var bulkInsertSetters = il.FindAllIndex(ci =>
+                    ci.opcode == OpCodes.Callvirt
+                    && ci.operand is MethodInfo mi
+                    && mi.Name == "set_IsInBulkInsert"
+                )
+                .ToArray();
             if (bulkInsertSetters.Length != 2)
                 throw new Exception("Cannot find IsInBulkInsert setters in PopulateBlockList");
 
@@ -173,11 +188,15 @@ namespace ClientPlugin.Patches
             var i = bulkInsertSetters[0] + 1;
             Debug.Assert(il[i].opcode == OpCodes.Stloc_S);
             var j = bulkInsertSetters[1];
-            while (il[j].opcode != OpCodes.Ldarg_0) j--;
+            while (il[j].opcode != OpCodes.Ldarg_0)
+                j--;
             il.RemoveRange(i, j - i);
 
             // After the IsInBulkInsert = true line the top of stack contains MyTerminalBlock[]
-            var methodInfo = AccessTools.DeclaredMethod(typeof(MyTerminalControlPanelPatch), nameof(PopulateBlockList_AddBlocks));
+            var methodInfo = AccessTools.DeclaredMethod(
+                typeof(MyTerminalControlPanelPatch),
+                nameof(PopulateBlockList_AddBlocks)
+            );
             il.Insert(i, new CodeInstruction(OpCodes.Call, methodInfo));
 
             il.RecordPatchedCode(patchedMethod);
@@ -195,12 +214,15 @@ namespace ClientPlugin.Patches
 
         [HarmonyTranspiler]
         [HarmonyPatch(nameof(MyTerminalControlPanel.UpdateItemAppearance))]
-        private static IEnumerable<CodeInstruction> UpdateItemAppearanceTranspiler(IEnumerable<CodeInstruction> code, MethodBase patchedMethod)
+        private static IEnumerable<CodeInstruction> UpdateItemAppearanceTranspiler(
+            IEnumerable<CodeInstruction> code,
+            MethodBase patchedMethod
+        )
         {
             var il = code.ToList();
             il.RecordOriginalCode(patchedMethod);
             il.VerifyCodeHash(patchedMethod, "b41c5b45");
-            
+
             // Replace this statement:
             // block.GetTerminalName(item.Text);
             var blockLoads = il.FindAllIndex(ci => ci.opcode == OpCodes.Ldarg_1).ToArray();
@@ -212,14 +234,20 @@ namespace ClientPlugin.Patches
             // Replace logic to allow showing the default block names instead of the player-defined ones
             il.Insert(i++, new CodeInstruction(OpCodes.Ldarg_1)); // block
             il.Insert(i++, new CodeInstruction(OpCodes.Ldarg_2)); // item
-            var methodInfo = AccessTools.DeclaredMethod(typeof(MyTerminalControlPanelPatch), nameof(UpdateItemAppearance_DefaultNameImplementation));
+            var methodInfo = AccessTools.DeclaredMethod(
+                typeof(MyTerminalControlPanelPatch),
+                nameof(UpdateItemAppearance_DefaultNameImplementation)
+            );
             il.Insert(i, new CodeInstruction(OpCodes.Call, methodInfo));
 
             il.RecordPatchedCode(patchedMethod);
             return il;
         }
 
-        private static void UpdateItemAppearance_DefaultNameImplementation(MyTerminalBlock block, MyGuiControlListbox.Item item)
+        private static void UpdateItemAppearance_DefaultNameImplementation(
+            MyTerminalBlock block,
+            MyGuiControlListbox.Item item
+        )
         {
             // Config condition is inside
             logic.UpdateItemAppearance_DefaultNameImplementation(block, item);

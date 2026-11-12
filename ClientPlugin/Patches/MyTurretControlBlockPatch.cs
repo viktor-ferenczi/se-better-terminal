@@ -13,7 +13,9 @@ namespace ClientPlugin.Patches
         [HarmonyPatch("CreateTerminalControls")]
         private static void CreateTerminalControlsPostfix()
         {
-            foreach (var control in MyTerminalControlFactory.GetControls(typeof(MyTurretControlBlock)))
+            foreach (
+                var control in MyTerminalControlFactory.GetControls(typeof(MyTurretControlBlock))
+            )
             {
                 if (control is not MyTerminalControlListbox<MyTurretControlBlock> listbox)
                     continue;
@@ -22,12 +24,14 @@ namespace ClientPlugin.Patches
                 {
                     // Double-click on available tool to add it
                     case "ToolList":
-                        listbox.ItemDoubleClicked = (block, items) => block.SendToolSelectionPressed();
+                        listbox.ItemDoubleClicked = (block, items) =>
+                            block.SendToolSelectionPressed();
                         break;
 
                     // Double-click on selected tool to remove it
                     case "SelectedToolsList":
-                        listbox.ItemDoubleClicked = (block, items) => block.SendToolUnselectionPressed();
+                        listbox.ItemDoubleClicked = (block, items) =>
+                            block.SendToolUnselectionPressed();
                         break;
                 }
             }

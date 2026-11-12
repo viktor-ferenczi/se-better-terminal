@@ -11,6 +11,7 @@ using VRage.Plugins;
 #if !LOCAL_BUILD
 [assembly: AssemblyVersion("1.3.0")]
 [assembly: AssemblyFileVersion("1.3.0")]
+
 #endif
 
 namespace ClientPlugin
@@ -23,7 +24,9 @@ namespace ClientPlugin
         public static Plugin Instance { get; private set; }
         private SettingsGenerator settingsGenerator;
 
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        [System.Runtime.CompilerServices.MethodImpl(
+            System.Runtime.CompilerServices.MethodImplOptions.NoInlining
+        )]
         public void Init(object gameInstance)
         {
             Instance = this;

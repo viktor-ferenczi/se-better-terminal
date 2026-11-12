@@ -13,7 +13,9 @@ namespace ClientPlugin.Patches
         [HarmonyPatch("CreateTerminalControls")]
         private static void CreateTerminalControlsPostfix()
         {
-            foreach (var control in MyTerminalControlFactory.GetControls(typeof(MyEventControllerBlock)))
+            foreach (
+                var control in MyTerminalControlFactory.GetControls(typeof(MyEventControllerBlock))
+            )
             {
                 if (control is not MyTerminalControlListbox<MyEventControllerBlock> listbox)
                     continue;

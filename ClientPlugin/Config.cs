@@ -1,10 +1,9 @@
-using ClientPlugin.Settings;
-using ClientPlugin.Settings.Elements;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using ClientPlugin.Logic;
-
+using ClientPlugin.Settings;
+using ClientPlugin.Settings.Elements;
 
 namespace ClientPlugin
 {
@@ -34,7 +33,6 @@ namespace ClientPlugin
         public readonly string Title = "Better Terminal";
 
         [Separator("Search")]
-
         [Textbox(description: "Enter this search text by default every time I open the Terminal")]
         public string DefaultSearchText
         {
@@ -43,7 +41,6 @@ namespace ClientPlugin
         }
 
         [Separator("Control Panel")]
-
         [Checkbox(description: "Allow renaming groups")]
         public bool EnableGroupRenaming
         {
@@ -66,7 +63,6 @@ namespace ClientPlugin
         }
 
         [Separator("Context Menu")]
-
         [Checkbox(description: "Enable right-click context menu on blocks")]
         public bool EnableContextMenu
         {
@@ -117,7 +113,6 @@ namespace ClientPlugin
         }
 
         [Separator("Double Click")]
-
         [Dropdown(description: "Double-click action")]
         public DoubleClickAction DoubleClickAction
         {
@@ -126,8 +121,9 @@ namespace ClientPlugin
         }
 
         [Separator("Ship Organizer")]
-
-        [Checkbox(description: "Enable organizing ships from the block context menu and by the /bt chat command")]
+        [Checkbox(
+            description: "Enable organizing ships from the block context menu and by the /bt chat command"
+        )]
         public bool EnableShipOrganizer
         {
             get => enableShipOrganizer;
@@ -155,9 +151,14 @@ namespace ClientPlugin
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        private bool SetField<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
+        private bool SetField<T>(
+            ref T field,
+            T value,
+            [CallerMemberName] string propertyName = null
+        )
         {
-            if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+            if (EqualityComparer<T>.Default.Equals(field, value))
+                return false;
             field = value;
             OnPropertyChanged(propertyName);
             return true;
