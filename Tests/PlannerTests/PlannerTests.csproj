@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Tests of the ship organizer's planner, see Program.cs for how to run them.
+       The planner has no game dependencies, so the tests run anywhere. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <!-- Do not inherit the plugin's game references -->
+    <ImportDirectoryBuildProps>false</ImportDirectoryBuildProps>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../ClientPlugin/Organizer/ShipModel.cs" />
+    <Compile Include="../../ClientPlugin/Organizer/Naming.cs" />
+    <Compile Include="../../ClientPlugin/Organizer/Planner.cs" />
+  </ItemGroup>
+</Project>

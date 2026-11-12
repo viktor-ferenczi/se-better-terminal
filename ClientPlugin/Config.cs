@@ -24,6 +24,8 @@ namespace ClientPlugin
         private bool contextMenuShowActions = true;
         private bool contextMenuShowToggles = true;
         private DoubleClickAction doubleClickAction = DoubleClickAction.None;
+        private bool enableShipOrganizer = true;
+        private bool organizerPrefixShipName = true;
 
         #endregion
 
@@ -121,6 +123,22 @@ namespace ClientPlugin
         {
             get => doubleClickAction;
             set => SetField(ref doubleClickAction, value);
+        }
+
+        [Separator("Ship Organizer")]
+
+        [Checkbox(description: "Enable organizing ships from the block context menu and by the /bt chat command")]
+        public bool EnableShipOrganizer
+        {
+            get => enableShipOrganizer;
+            set => SetField(ref enableShipOrganizer, value);
+        }
+
+        [Checkbox(description: "Start the block and group names with the name of the ship")]
+        public bool OrganizerPrefixShipName
+        {
+            get => organizerPrefixShipName;
+            set => SetField(ref organizerPrefixShipName, value);
         }
 
         #endregion

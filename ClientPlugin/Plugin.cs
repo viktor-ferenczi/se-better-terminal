@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using ClientPlugin.Organizer;
 using ClientPlugin.Settings;
 using ClientPlugin.Settings.Layouts;
 using HarmonyLib;
@@ -8,8 +9,8 @@ using VRage.Plugins;
 
 // Define assembly version when compiled by Pulsar
 #if !LOCAL_BUILD
-[assembly: AssemblyVersion("1.2.8")]
-[assembly: AssemblyFileVersion("1.2.8")]
+[assembly: AssemblyVersion("1.3.0")]
+[assembly: AssemblyFileVersion("1.3.0")]
 #endif
 
 namespace ClientPlugin
@@ -39,6 +40,7 @@ namespace ClientPlugin
 
         public void Update()
         {
+            OrganizerCommands.Update();
         }
 
         // ReSharper disable once UnusedMember.Global
