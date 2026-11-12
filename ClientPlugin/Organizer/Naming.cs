@@ -216,6 +216,13 @@ namespace ClientPlugin.Organizer
                     return BlockKind.Collector;
                 case "ButtonPanel":
                     return BlockKind.ButtonPanel;
+                case "TextPanel":
+                    return BlockKind.Lcd;
+                case "MedicalRoom":
+                    // Medical rooms and survival kits stay listed, they have respawn settings
+                    return subtypeId.Contains("RefillStation")
+                        ? BlockKind.RefillStation
+                        : BlockKind.Other;
                 default:
                     return BlockKind.Other;
             }

@@ -71,6 +71,17 @@ static class Program
             "ejector"
         );
         Equal(BlockKind.Seat, Naming.Classify("Cockpit", "PassengerSeatLarge", false), "seat");
+        Equal(BlockKind.Lcd, Naming.Classify("TextPanel", "LargeLCDPanelWide", false), "LCD");
+        Equal(
+            BlockKind.RefillStation,
+            Naming.Classify("MedicalRoom", "InsetRefillStation", false),
+            "refill station"
+        );
+        Equal(
+            BlockKind.Other,
+            Naming.Classify("MedicalRoom", "LargeMedicalRoom", false),
+            "medical room"
+        );
     }
 
     private static void TestPlan()
@@ -129,6 +140,9 @@ static class Program
         var timer = Add("TimerBlock", "Timer Block");
         Add("Parachute", "Parachute Hatch");
         var rearCamera = Add("CameraBlock", "Camera", ShipDirection.Back);
+        var lcd = Add("TextPanel", "LCD Panel");
+        var refill = Add("MedicalRoom", "Refill Station", subtype: "SmallRefillStation");
+        var medical = Add("MedicalRoom", "Medical Room", subtype: "LargeMedicalRoom");
 
         var plan = Planner.Plan(ship, true);
         string Name(BlockInfo block) => plan.Blocks[block.EntityId].Name;
@@ -154,6 +168,12 @@ static class Program
             "the cockpit is hidden from the terminal"
         );
         Check(plan.Blocks[timer.EntityId].ShowInTerminal, "timers stay in the terminal");
+        Check(!plan.Blocks[lcd.EntityId].ShowInTerminal, "LCDs are hidden from the terminal");
+        Check(
+            !plan.Blocks[refill.EntityId].ShowInTerminal,
+            "refill stations are hidden from the terminal"
+        );
+        Check(plan.Blocks[medical.EntityId].ShowInTerminal, "medical rooms stay in the terminal");
         Check(plan.Blocks[cargo.EntityId].ShowInInventory, "cargo stays in the inventory screen");
         Check(
             !plan.Blocks[isolated.EntityId].ShowInInventory,
@@ -188,7 +208,11 @@ static class Program
             var grouped = plan.Groups.Any(g => g.BlockIds.Contains(block.EntityId));
             var hidden = !plan.Blocks[block.EntityId].ShowInTerminal;
             Check(
-                !hidden || grouped || block.Kind == BlockKind.Cockpit,
+                !hidden
+                    || grouped
+                    || block.Kind == BlockKind.Cockpit
+                    || block.Kind == BlockKind.Lcd
+                    || block.Kind == BlockKind.RefillStation,
                 $"{block.DefaultName}: hidden blocks are reachable by a group"
             );
         }

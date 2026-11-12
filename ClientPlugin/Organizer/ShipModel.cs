@@ -53,6 +53,8 @@ namespace ClientPlugin.Organizer
         Sorter,
         Collector,
         ButtonPanel,
+        Lcd,
+        RefillStation,
     }
 
     public class BlockInfo

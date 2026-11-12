@@ -141,7 +141,8 @@ What it does, in this order:
    tanks by gas, generators, engines, reactors, solar panels, wind turbines, cargo containers,
    parachutes, turrets, guns, decoys, doors, air vents and jump drives. Two or more
    connectors get a `Connectors` group, but stay visible.
-5. **Hides** cockpits, seats and button panels from the block list.
+5. **Hides** cockpits, seats, button panels, LCD panels and refill stations from the block
+   list.
 6. **Hides blocks from the inventory screen** if they are not reachable from the ship's
    largest cargo container through conveyors, or if items only pass through them: tools,
    connectors, ejectors, collectors, sorters and gas tanks.

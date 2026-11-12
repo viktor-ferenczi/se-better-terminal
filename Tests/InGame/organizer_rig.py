@@ -55,6 +55,7 @@ def snapshot(api, grid_id):
             )
         state[entity_id] = {
             "type": root.get(XSI_TYPE) or root.tag,
+            "subtype": root.findtext("SubtypeName") or "",
             "name": root.findtext("CustomName"),
             "terminal": root.findtext("ShowInTerminal") != "false",
             "inventory": root.findtext("ShowInInventory") != "false",
@@ -126,6 +127,8 @@ def main():
     projector = (kind("Projector") or [None])[0]
     projection_before = projection(api, projector) if projector else None
     print("projection before:", projection_before, flush=True)
+    if projector and not projection_before["blocks"]:
+        projector = None  # Holds no blueprint, so it is not a repair projector
 
     # Organize
     print(api.send_chat(f"/bt organize {grid_id}"), flush=True)
@@ -156,6 +159,21 @@ def main():
         )
     if kind("Cockpit"):
         check(not after[cockpit]["terminal"], "the cockpit is hidden from the terminal")
+    # Hidden without a group: nothing to set up there
+    refills = [
+        i for i in kind("MedicalRoom") if "RefillStation" in before[i]["subtype"]
+    ]
+    ungrouped = set(kind("Cockpit") + kind("TextPanel") + kind("ButtonPanel") + refills)
+    if kind("TextPanel"):
+        check(
+            all(not after[i]["terminal"] for i in kind("TextPanel")),
+            "LCDs are hidden from the terminal",
+        )
+    if refills:
+        check(
+            all(not after[i]["terminal"] for i in refills),
+            "refill stations are hidden from the terminal",
+        )
     if remote:
         check(after[remote]["terminal"], "the remote control stays in the terminal")
     cameras = sorted(after[i]["name"] for i in kind("CameraBlock"))
@@ -179,8 +197,9 @@ def main():
         "connectors are hidden from the inventory screen",
     )
     check(
-        all(after[i]["inventory"] for i in kind("CargoContainer")),
-        "cargo containers stay in the inventory screen",
+        not kind("CargoContainer")
+        or any(after[i]["inventory"] for i in kind("CargoContainer")),
+        "the main cargo container stays in the inventory screen",
     )
 
     batteries = prefix + "Batteries"
@@ -194,7 +213,7 @@ def main():
         if re.search(r"Thrusters \((Up|Down|Left|Right|Forward|Backward)\)$", g)
     ]
     check(len(thruster_groups) >= 1, f"thruster groups by direction: {thruster_groups}")
-    hidden = [i for i, b in after.items() if not b["terminal"] and i != cockpit]
+    hidden = [i for i, b in after.items() if not b["terminal"] and i not in ungrouped]
     grouped = {i for ids in groups_after.values() for i in ids}
     check(all(i in grouped for i in hidden), "every hidden block is in a group")
 
@@ -340,6 +359,9 @@ def main():
     time.sleep(8)
     reverted, groups_reverted = snapshot(api, grid_id)
     for i, block in before.items():
+        if block["name"] is None:
+            # Never renamed: the game saves the default name once it is set again
+            block = dict(block, name=reverted[i]["name"])
         if reverted.get(i) != block:
             check(False, f"revert of {block['name']}: {reverted.get(i)} != {block}")
             break

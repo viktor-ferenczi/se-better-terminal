@@ -48,6 +48,8 @@ namespace ClientPlugin.Organizer
             BlockKind.Cockpit,
             BlockKind.Seat,
             BlockKind.ButtonPanel,
+            BlockKind.Lcd,
+            BlockKind.RefillStation,
         };
 
         // Have an inventory, but items only pass through them
